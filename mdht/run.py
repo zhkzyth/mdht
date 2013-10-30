@@ -110,7 +110,7 @@ class MDHT(object):
         """
         reactor.callLater(delay, func)
 
-    def halt(self):
+    def halt(self,result):
         """
         Terminates the MDHT client
 

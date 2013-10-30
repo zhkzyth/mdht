@@ -215,6 +215,7 @@ class KRPC_Responder(KRPC_Sender):
         return self.sendQuery(query, address, timeout)
 
     def find_node(self, address, node_id, timeout=None):
+        print "ok,we are in the find_node part"
         timeout = timeout or constants.rpctimeout
         query = Query()
         query.rpctype = "find_node"
