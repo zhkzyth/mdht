@@ -83,7 +83,7 @@ class Query(_KRPC):
         # Fill in user provided values
         r.nodes = nodes
         r.token = token
-        r.peers = peers 
+        r.peers = peers
         return r
 
     def build_error(self, code=201, message="Generic Error"):
@@ -106,10 +106,10 @@ class Query(_KRPC):
     # TODO check if there is a way to
     # programmaticaly get this list (dir() + function filtering)
     def _get_attrs(self):
-        return ('_transaction_id', 'rpctype', 
+        return ('_transaction_id', 'rpctype',
                 '_from', 'target_id', 'token', 'port')
 
-   
+
 class Response(_KRPC):
     """
     A Response contains the requested data of the originating query
@@ -128,8 +128,8 @@ class Response(_KRPC):
         self._from = _from
         self.nodes = nodes
         self.token = token
-        self.peers = peers 
-        self.rpctype = rpctype 
+        self.peers = peers
+        self.rpctype = rpctype
 
     def __repr__(self):
         printable_attributes = self._get_attrs()
@@ -152,7 +152,7 @@ class Error(_KRPC):
         _KRPC.__init__(self, _transaction_id=_transaction_id)
         self.code = code
         self.message = message
-    
+
     def __repr__(self):
         printable_attributes = ['_transaction_id', 'rpctype', 'code']
         message_string = "message='%s'" % self.message

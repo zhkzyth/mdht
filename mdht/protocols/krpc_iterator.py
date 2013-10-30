@@ -127,6 +127,8 @@ class KRPC_Iterator(KRPC_Responder):
         @see IterationError
 
         """
+
+        # print target_id,nodes
         # Prepare the seed nodes
         if nodes is None:
             # If no nodes are supplied, we have to
@@ -138,10 +140,11 @@ class KRPC_Iterator(KRPC_Responder):
                         + "were found in the routing table"))
         else:
             seed_nodes = nodes
-        
+
         # Don't send duplicate queries
         seed_nodes = set(seed_nodes)
 
+        print seed_nodes
         # Send a query to each node and collect all
         # the deferred results
         deferreds = list()

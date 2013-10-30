@@ -37,13 +37,13 @@ def ltob(long_number):
     """Convert a python long into a bencoded int"""
     numstring = hex(long_number)[2:].rstrip("L")
     if len(numstring) % 2 == 1:
-        numstring = "0%s" % numstring
+        numstring = "0%s" % numstring ## keep on adding padding zero
     return numstring.decode("hex")
 
 def encode_network_id(network_id):
     """
     Encode the network id into the network format
-    
+
     @raises InvalidDataError when the network id is invalid
 
     """
@@ -71,9 +71,9 @@ def decode_network_id(network_id_string):
 def decode_port(port_string):
     """
     Decodes the port string into a port integer
-    
+
     @raises InvalidDataError when the port string is invalid
-    
+
     """
     if len(port_string) != 2:
         raise InvalidDataError(
@@ -103,13 +103,13 @@ def encode_port(port):
 def encode_address(address):
     """
     Encodes the given ipv4 address tuple into a network format string
-    
+
     @throws InvalidAddressError if the input address is invalid
-    
+
     """
     try:
         (ip, port) = address
-        ip_string = socket.inet_aton(ip)
+        ip_string = socket.inet_aton(ip) ## change ip string to 32 bit string (4 bytes at all)
         # Make sure that a port's value is padded to two bytes
         # in the encoding, since each address string must
         # take up six bytes for the encoding/decoding to work
@@ -123,9 +123,9 @@ def encode_address(address):
 def decode_address(address_string):
     """
     Decodes the network format ipv4 address string into an address tuple
-    
+
     @throws InvalidAddressError if the input address string is invalid
-    
+
     """
     try:
         if len(address_string) != 6:
@@ -146,9 +146,9 @@ def decode_address(address_string):
 def _pad_zeros(string, size):
     """
     Pad string to 'size' with zeros on the left  hand side
-    
+
     ie: _pad_zeros('\xff', 2) becomes '\x00\xff'
-    
+
     """
     num_zeros = size - len(string)
     if num_zeros > 0:

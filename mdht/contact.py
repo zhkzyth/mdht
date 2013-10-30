@@ -6,8 +6,6 @@ Objects used to encapsulate the identity of DHT nodes
 """
 import time
 import sys
-import socket
-from socket import inet_aton, inet_ntoa
 
 from mdht.coding import basic_coder
 from mdht import constants
@@ -38,7 +36,8 @@ class Node(object):
 
     """
     def __init__(self, node_id, address):
-        # Verify the node_id and address are in the proper format
+        # TODO make check interface.Don't use the encoding funcs directlly
+        # So we don't crash here.
         basic_coder.encode_address(address)
         basic_coder.encode_network_id(node_id)
         # Network information
@@ -53,11 +52,11 @@ class Node(object):
     def distance(self, node_id):
         """
         Compute the distance from this node to the id provided
-        
+
         This distance is used to determine a DHT node's closeness
         to another node or to a data identifier (such as an infohash
         of a torrent file found in the network)
-        
+
         """
         return node_id ^ self.node_id
 
@@ -99,7 +98,7 @@ class Node(object):
         response (or error) was received to constants.node_timeout
         @see mdht.constants
         @returns boolean
-        
+
         """
         current_time = time.time()
         age = current_time - self.last_updated
@@ -136,7 +135,8 @@ class Node(object):
         the rtt increases significantly for each failed query
 
         """
-        total_reply_count = self.successcount + self.failcount
+        # total_reply_count = self.successcount + self.failcount
+        total_reply_count = self.successcount
         if total_reply_count == 0:
             return sys.maxint
         return self.totalrtt / total_reply_count
@@ -165,6 +165,8 @@ class Node(object):
         return "node: id=%d address=%s" % (self.node_id,
                                            address_str(self.address))
 
+
+## Helper funcs??
 def address_str(address):
     """Creates a string representation of an ipv4 address tuple (ip, port)"""
     return "ip=%s port=%d" % address

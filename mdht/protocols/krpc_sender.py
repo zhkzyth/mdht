@@ -7,21 +7,17 @@ is written with the Twisted Network framework
 
 """
 import random
-from collections import defaultdict
 
 from zope.interface import implements, Interface
 from twisted.python import log
 from twisted.internet import reactor, defer, protocol
-from twisted.python.components import proxyForInterface
-from twisted.internet.interfaces import IUDPTransport
 
 from mdht import constants, contact
-from mdht.kademlia import routing_table
 from mdht.coding import krpc_coder
 from mdht.coding.krpc_coder import InvalidKRPCError
 from mdht.krpc_types import Query, Response, Error
 from mdht.transaction import Transaction
-from mdht.protocols.errors import TimeoutError, KRPCError 
+from mdht.protocols.errors import TimeoutError, KRPCError
 
 class IKRPC_Sender(Interface):
     """
@@ -56,7 +52,7 @@ class IKRPC_Sender(Interface):
 
         If the krpc is a query, it is passed onto queryReceived for further
         processing.
-        
+
         If the krpc is a response or error, an attempt is made to
         find the original query. If it is found, the krpc is passed
         onto either responseReceived or errorReceived (along with
@@ -171,7 +167,7 @@ class IKRPC_Sender(Interface):
 
         """
 
-
+## based on UDP
 class KRPC_Sender(protocol.DatagramProtocol):
 
     implements(IKRPC_Sender)
@@ -181,9 +177,9 @@ class KRPC_Sender(protocol.DatagramProtocol):
         # one from twisted.internet
         if _reactor is None:
             self._reactor = reactor
-        self.node_id = long(node_id)
-        self._transactions = dict()
-        self.routing_table = routing_table_class(self.node_id)
+            self.node_id = long(node_id)
+            self._transactions = dict()
+            self.routing_table = routing_table_class(self.node_id)
 
     def datagramReceived(self, data, address):
         """
@@ -225,6 +221,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
             dispatcher(query, address)
 
     def responseReceived(self, response, transaction, address):
+        print "response received."
         transaction.deferred.callback(response)
 
     def errorReceived(self, error, transaction, address):
@@ -232,6 +229,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
 
     def sendKRPC(self, krpc, address):
         encoded_packet = krpc_coder.encode(krpc)
+        print "sendKRPC",encoded_packet,address,"\n"
         self.transport.write(encoded_packet, address)
 
     def sendQuery(self, query, address, timeout):
@@ -239,7 +237,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
         query._from = self.node_id
         query._transaction_id = self._generate_transaction_id()
         # Try to send the krpc, there is an encoding error
-        # immediately return the error to the user 
+        # immediately return the error to the user
         try:
             self.sendKRPC(query, address)
         except InvalidKRPCError as encoding_error:
@@ -274,6 +272,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
     def sendError(self, error, address):
         self.sendKRPC(error, address)
 
+    ## if this is successful query,we update our routing table
     def _query_success_callback(self, response, address, transaction):
         """
         Handle a valid Response to an outstanding Query
@@ -285,7 +284,10 @@ class KRPC_Sender(protocol.DatagramProtocol):
         """
         # Pull the node corresponding to this response out
         # of our routing table, or create it if it doesn't exist
+        print "_query_success_callback, and result is ",response
+
         rt_node = self.routing_table.get_node(response._from)
+
         responsenode = (rt_node if rt_node is not None
                         else contact.Node(response._from, address))
         responsenode.successful_query(transaction.time)

@@ -8,13 +8,12 @@ Implementation of a RoutingTable for the Kademlia network
 @see references/README for Rasterbar's BitTorrent Overview
 
 """
-import random
 from collections import defaultdict
 
 from twisted.python import log
 from zope.interface import Interface, implements
 
-from mdht import contact, constants
+from mdht import constants
 from mdht.kademlia import kbucket
 
 class IRoutingTable(Interface):
@@ -144,7 +143,7 @@ class TreeRoutingTable(object):
     def _offer_node(self, tnode, node):
         """
         Recursive helper function for offer_node
-        
+
         @return boolean indicating whether node was added
         to tnode or its subtree
 
@@ -198,7 +197,7 @@ class TreeRoutingTable(object):
         @param tnode: We are recursing down tnode and its subtrees
         @param closest_nodes: The list where we are storing our results
         @param num_nodes: How many nodes we are looking for
-        
+
         @returns None
 
         """
@@ -210,6 +209,8 @@ class TreeRoutingTable(object):
             bucket_nodes = tnode.kbucket.get_nodes()
             closest_nodes.extend(bucket_nodes)
             return
+        ## recursive to find a proper kbucket
+        ## BUG extra node finding may always fall into the thrid case.
         if tnode.lchild.kbucket.key_in_range(node_id):
             direction = "left"
             self._get_closest_nodes(
@@ -219,9 +220,8 @@ class TreeRoutingTable(object):
             self._get_closest_nodes(
                     node_id, tnode.rchild, closest_nodes, num_nodes)
         else:
-            # This else should never be reached
             log.msg("RoutingTable: node_id didn't fall into either"
-                    " of a treenode's children. ???")
+                    " of a treenode's children.")
             return
 
         # If trying the left/right subtree did not yield
@@ -269,7 +269,7 @@ class TreeRoutingTable(object):
 class _TreeNode(object):
     """
     An auxilary node structure for the TreeRoutingTable
-    
+
     A treenode contains a kbucket and two children treenodes
     (kbucket, lchild, and rchild respectively)
 
@@ -295,7 +295,7 @@ class SubsecondRoutingTable(TreeRoutingTable):
 
 
         This function extends the TreeRoutingTable.split method
-        to modify the size of the created KBuckets (as an 
+        to modify the size of the created KBuckets (as an
         optimization found in section 5.D of references/subsecond.pdf
 
         @see TreeRoutingTable.split
@@ -325,4 +325,3 @@ class SubsecondRoutingTable(TreeRoutingTable):
 
         """
         return max(128 / 2 ** self.other_bucket_count, constants.k)
-

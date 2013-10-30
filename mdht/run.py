@@ -2,10 +2,15 @@
 An interface to mdht that abstracts away Twisted details (like the reactor)
 
 """
-from twisted.internet import reactor
+import sys
+
+
+from twisted.internet import reactor, defer
 
 from mdht import constants
 from mdht.protocols.krpc_iterator import IKRPC_Iterator, KRPC_Iterator
+
+
 
 class MDHT(object):
 
@@ -40,6 +45,7 @@ class MDHT(object):
                     IKRPC_Iterator)
 
         for funcname in funcnames:
+            # print funcname
             func = getattr(self.proto, funcname, None)
             assert func is not None
             setattr(self, funcname, func)
@@ -66,9 +72,31 @@ class MDHT(object):
             addresses = set(addresses)
             addresses.update(constants.bootstrap_addresses)
 
+        def ping_success(result):
+            print "ok,we finally got it"
+            return result
+
+        ## log the timeout,so we need to do another reconnect
+        ## or change another bootstrap address
+        def ping_fail(error):
+            print >> sys.stderr,error
+            return None
+
+        def temp_fun(ip_address,self,port):
+            print ip_address,port
+            d = self.ping((ip_address,port))
+            d.addCallbacks(ping_success,ping_fail)
+            return None
+
+        dl = defer.DeferredList([])
+
+        # make ping request
         for hostname, port in addresses:
             d = reactor.resolve(hostname)
-            d.addCallback(self.find_iterate, self.proto.node_id)
+            d.addCallback(temp_fun,self,port)
+            # dl.append(d)
+
+        return dl
 
     def schedule(self, delay, func, *args, **kwargs):
         """
@@ -90,3 +118,11 @@ class MDHT(object):
 
         """
         reactor.stop()
+
+    def get_nodes_num(self):
+        """
+
+        Return the size of our routing_table size
+
+        """
+        return len(self.proto.routing_table.nodes_dict)

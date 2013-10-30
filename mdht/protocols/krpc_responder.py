@@ -8,11 +8,10 @@ import random
 import hashlib
 
 from collections import deque, defaultdict
-from zope.interface import implements, Interface
+from zope.interface import implements
 from twisted.python import log
-from twisted.python.components import proxyForInterface
 
-from mdht import constants, contact
+from mdht import constants
 from mdht.coding import basic_coder
 from mdht.krpc_types import Query
 from mdht.protocols.krpc_sender import KRPC_Sender, IKRPC_Sender
@@ -24,7 +23,7 @@ class IKRPC_Responder(IKRPC_Sender):
 
     This protocol extension forms responses to incoming
     queries with compliance to the BEP 005 specification
-    
+
     """
 
     def __init__(self, routing_table_class=TreeRoutingTable, node_id=None):
@@ -62,7 +61,7 @@ class IKRPC_Responder(IKRPC_Sender):
         """
         This method is called when a get_peers Query has been received.
 
-        Override this method if you want to handle incoming get_peers 
+        Override this method if you want to handle incoming get_peers
         queries. This implementation responds with a valid get_peers Response
 
         @param query: the get_peers query that has been received (this
@@ -76,7 +75,7 @@ class IKRPC_Responder(IKRPC_Sender):
         """
         This method is called when a announce_peer Query has been received.
 
-        Override this method if you want to handle incoming announce_peer 
+        Override this method if you want to handle incoming announce_peer
         queries. This implementation responds with a valid
         announce_peer Response
 
@@ -260,10 +259,10 @@ class _TokenGenerator(object):
     def generate(self, query, address):
         """
         Create a hash value for the get_peers/announce_peer query and address
-        
+
         @param query: The query to hash
         @param address: The address of the querying node
-        
+
         """
         # Remove timed out secrets
         self._prune_secrets()
