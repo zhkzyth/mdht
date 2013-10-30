@@ -1,9 +1,0 @@
-mdht
-====
-
-A library with protocols needed to run a Mainline DHT node (written with Twisted)
-
-mdht is under heavy maintenance at the moment
-
-Comments, questions, and patches welcome:
-gsk067@gmail.com
