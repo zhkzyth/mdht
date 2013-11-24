@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """
 @author Greg Skoczek
 
@@ -10,6 +12,7 @@ standard as part of BitTorrent.
 import socket
 
 from mdht import constants
+
 
 class InvalidDataError(Exception):
     """

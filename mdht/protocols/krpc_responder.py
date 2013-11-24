@@ -1,21 +1,23 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """
 This module encapsulates a twisted protocol encapsulating the core DHT
 node functionality.
-
 """
 import time
 import random
 import hashlib
-
 from collections import deque, defaultdict
 from zope.interface import implements
 from twisted.python import log
 
 from mdht import constants
+from mdht.database import database
 from mdht.coding import basic_coder
 from mdht.krpc_types import Query
 from mdht.protocols.krpc_sender import KRPC_Sender, IKRPC_Sender
 from mdht.kademlia.routing_table import TreeRoutingTable
+
 
 class IKRPC_Responder(IKRPC_Sender):
     """
@@ -141,9 +143,9 @@ class KRPC_Responder(KRPC_Sender):
     implements(IKRPC_Responder)
 
     def __init__(self,
-            routing_table_class=TreeRoutingTable,
-            node_id=None,
-            _reactor=None):
+                 routing_table_class=TreeRoutingTable,
+                 node_id=None,
+                 _reactor=None):
 
         if node_id is None:
             node_id = random.getrandbits(160)
@@ -154,15 +156,75 @@ class KRPC_Responder(KRPC_Sender):
 
         # Datastore is used for storing peers on torrents
         self._datastore = defaultdict(set)
+        resources_set = database["sources"].find()
+        for resources in resources_set:
+             self._datastore[resources["_id"]] = [ (resource["ip"], resource["port"]) for resource in resources["peer_list"]]
+
         self._token_generator = _TokenGenerator()
+
+        # TODO necess to store nodes periodically?
+        # set a routine to keep routing table updated
+        # smore data lossing is ok here
+        # save_routing_table_loop = task.LoopingCall(save_routing_table)
+        # save_routing_table_loop.start(ROUTING_TIME)
+
+    def stopProtocol(self):
+        log.msg("connection shutdown by admin, try to save the routing table.Be patient")
+        self._save_routing_table()
+        self._save_sources_peers()
+
+    def _save_routing_table(self):
+        nodes = self.routing_table.get_nodes()
+        params = []
+        for k in nodes:
+            params.append({
+                "_id":  str(nodes[k].node_id),
+                "ip":   nodes[k].address[0],
+                "port": nodes[k].address[1],
+                "last_updated": nodes[k].last_updated,
+                "totalrtt": nodes[k].totalrtt,
+                "successcount": nodes[k].successcount,
+                "failcount": nodes[k].failcount,
+            })
+        if params:
+            try:
+                database["routing_table"].insert(params, continue_on_error=True)
+                log.msg("nodes has saved to routing_table: %s" % params)
+            except:
+                log.error("save nodes to routing_table break.")
+
+    def _save_sources_peers(self):
+        documents = []
+        t_dict  = self._datastore
+        for target_id in t_dict:
+            peer_list = []
+            for peer in t_dict[target_id]:
+                peer_list.append({
+                    "ip": peer[0],
+                    "port": peer[1],
+                })
+            documents.append({
+                "_id": str(target_id),
+                "peer_list": peer_list,
+            })
+        if documents:
+            try:
+                database["sources"].insert(documents, continue_on_error=True)
+                log.msg("sources has saved to sources table: %s" % documents)
+            except:
+                log.error("save to sources table break.")
+
 
     def ping_Received(self, query, address):
         # The ping response needs no additional protocol
         # data, so build_response() is empty
+        log.msg("ping_Received from node(%s:%s)" % address)
+
         response = query.build_response()
         self.sendResponse(response, address)
 
     def find_node_Received(self, query, address):
+        log.msg("find_node_Received from node(%s:%s)" % address)
         target_node = self.routing_table.get_node(query.target_id)
         # If we have the target node, return it
         # otherwise return the nodes closest to the target ID
@@ -170,11 +232,14 @@ class KRPC_Responder(KRPC_Sender):
             nodes = [target_node]
         else:
             nodes = self.routing_table.get_closest_nodes(query.target_id)
+
         # Include the nodes in the response
         response = query.build_response(nodes=nodes)
         self.sendResponse(response, address)
 
     def get_peers_Received(self, query, address):
+        log.msg("get_peers_Received from node(%s:%s)" % address)
+
         nodes = None
         peers = self._datastore.get(query.target_id) or list()
         # Check if we have peers for the target infohash
@@ -191,8 +256,13 @@ class KRPC_Responder(KRPC_Sender):
         self.sendResponse(response, address)
 
     def announce_peer_Received(self, query, address):
+        log.msg("announce_peers_Received from node(%s:%s)" % address)
         token = query.token
         token_is_valid = self._token_generator.verify(query, address, token)
+
+        #temp hack
+        token_is_valid = True
+
         if token_is_valid:
             # If the token is valid, we authenticate
             # the querying node to store itself as a peer
@@ -209,13 +279,14 @@ class KRPC_Responder(KRPC_Sender):
                     " announce_peerReceived")
 
     def ping(self, address, timeout=None):
+        log.msg("make a ping request to node (%s:%s)" % address)
         timeout = timeout or constants.rpctimeout
         query = Query()
         query.rpctype = "ping"
         return self.sendQuery(query, address, timeout)
 
     def find_node(self, address, node_id, timeout=None):
-        print "ok,we are in the find_node part"
+        log.msg("make a find_node request to node(%s:%s)" % address)
         timeout = timeout or constants.rpctimeout
         query = Query()
         query.rpctype = "find_node"
@@ -223,6 +294,7 @@ class KRPC_Responder(KRPC_Sender):
         return self.sendQuery(query, address, timeout)
 
     def get_peers(self, address, target_id, timeout=None):
+        log.msg("make a get_peers request to node(%s:%s)" % address)
         timeout = timeout or constants.rpctimeout
         query = Query()
         query.rpctype = "get_peers"
@@ -230,6 +302,7 @@ class KRPC_Responder(KRPC_Sender):
         return self.sendQuery(query, address, timeout)
 
     def announce_peer(self, address, target_id, token, port, timeout=None):
+        log.msg("make a announce_peers request to node(%s:%s)" % address)
         timeout = timeout or constants.rpctimeout
         query = Query()
         query.rpctype = "announce_peer"
@@ -269,7 +342,7 @@ class _TokenGenerator(object):
         self._prune_secrets()
         time_since_last_secret = time.time() - self.last_secret_time
         if (time_since_last_secret >= constants._secret_timeout or
-                len(self.secrets) == 0):
+            len(self.secrets) == 0):
             self.secrets.appendleft(self._new_secret())
 
         self.last_secret_time = time.time()
@@ -288,7 +361,7 @@ class _TokenGenerator(object):
             hashed_token = self._get_hash(query, address, secret)
             if hashed_token == token:
                 return True
-        return False
+            return False
 
     def _get_hash(self, query, address, secret):
         """

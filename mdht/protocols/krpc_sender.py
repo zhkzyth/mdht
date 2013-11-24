@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """
 @author Greg Skoczek
 
@@ -7,10 +9,10 @@ is written with the Twisted Network framework
 
 """
 import random
-
+import logging
 from zope.interface import implements, Interface
 from twisted.python import log
-from twisted.internet import reactor, defer, protocol
+from twisted.internet import reactor, defer, protocol, task
 
 from mdht import constants, contact
 from mdht.coding import krpc_coder
@@ -18,6 +20,8 @@ from mdht.coding.krpc_coder import InvalidKRPCError
 from mdht.krpc_types import Query, Response, Error
 from mdht.transaction import Transaction
 from mdht.protocols.errors import TimeoutError, KRPCError
+from mdht.database import database
+
 
 class IKRPC_Sender(Interface):
     """
@@ -167,6 +171,7 @@ class IKRPC_Sender(Interface):
 
         """
 
+
 ## based on UDP
 class KRPC_Sender(protocol.DatagramProtocol):
 
@@ -177,9 +182,21 @@ class KRPC_Sender(protocol.DatagramProtocol):
         # one from twisted.internet
         if _reactor is None:
             self._reactor = reactor
-            self.node_id = long(node_id)
-            self._transactions = dict()
-            self.routing_table = routing_table_class(self.node_id)
+        self.node_id = long(node_id)
+        self._transactions = dict()
+        self.routing_table = routing_table_class(self.node_id)
+        self.db = database
+
+        node_list = database["routing_table"].find({"_id":{"$ne":str(self.node_id)}})
+        for _node in node_list:
+            node = contact.Node(node_id=int(_node["_id"]),
+                                address=(_node["ip"], _node["port"]),
+                                last_updated=_node["last_updated"],
+                                totalrtt=_node["totalrtt"],
+                                successcount=_node["successcount"],
+                                failcount=_node["failcount"],
+                                )
+            self.routing_table.offer_node(node)
 
     def datagramReceived(self, data, address):
         """
@@ -195,17 +212,19 @@ class KRPC_Sender(protocol.DatagramProtocol):
         try:
             krpc = krpc_coder.decode(data)
         except InvalidKRPCError:
-            log.msg("Malformed packet received from %s:%d" % address)
+            log.msg("Malformed packet received from %s:%d" % address, logLevel=logging.WARNING)
             return
         self.krpcReceived(krpc, address)
 
     def krpcReceived(self, krpc, address):
         if isinstance(krpc, Query):
+            self._save_received_node(krpc, address)
             self.queryReceived(krpc, address)
         else:
             transaction = self._transactions.get(krpc._transaction_id, None)
             if transaction is not None:
                 if isinstance(krpc, Response):
+                    self._save_received_node(krpc, address)
                     self.responseReceived(krpc, transaction, address)
                 elif isinstance(krpc, Error):
                     self.errorReceived(krpc, transaction, address)
@@ -221,15 +240,16 @@ class KRPC_Sender(protocol.DatagramProtocol):
             dispatcher(query, address)
 
     def responseReceived(self, response, transaction, address):
-        print "response received."
+        log.msg("response received from node(%s:%s)." % address)
         transaction.deferred.callback(response)
 
     def errorReceived(self, error, transaction, address):
+        log.msg("error received from node(%s:%s)." % address)
         transaction.deferred.errback(KRPCError(error))
 
     def sendKRPC(self, krpc, address):
         encoded_packet = krpc_coder.encode(krpc)
-        print "sendKRPC",encoded_packet,address,"\n"
+        log.msg("sendKRPC",encoded_packet,address,"\n")
         self.transport.write(encoded_packet, address)
 
     def sendQuery(self, query, address, timeout):
@@ -257,7 +277,8 @@ class KRPC_Sender(protocol.DatagramProtocol):
         # has to complete (ie: receive a response or error)
         t.timeout_call = self._reactor.callLater(constants.rpctimeout,
                                 t.deferred.errback, TimeoutError())
-        # Store this transaction
+        # Store this transaction, so when we receive responses back,
+        # we can check whether their rightness
         self._transactions[query._transaction_id] = t
         # Add a callback that removes this transaction
         # after it has been processed
@@ -284,13 +305,15 @@ class KRPC_Sender(protocol.DatagramProtocol):
         """
         # Pull the node corresponding to this response out
         # of our routing table, or create it if it doesn't exist
-        print "_query_success_callback, and result is ",response
+        log.msg("_query_success_callback, and result is %s" % response)
 
+
+        # get/create node, and update the node's activeness for later calculation
         rt_node = self.routing_table.get_node(response._from)
-
         responsenode = (rt_node if rt_node is not None
                         else contact.Node(response._from, address))
         responsenode.successful_query(transaction.time)
+
         self.routing_table.offer_node(responsenode)
         # Pass the response further down the callback chain
         return response
@@ -309,7 +332,9 @@ class KRPC_Sender(protocol.DatagramProtocol):
         # is either a TimeoutError or a KRPCError
         f = failure.trap(TimeoutError, KRPCError)
 
-        errornodes = self.routing_table.get_node_by_address(address)
+        # FIXME not thread save? but there is thread at all.
+        import copy
+        errornodes = copy.deepcopy(self.routing_table.get_node_by_address(address))
         if errornodes is None:
             return failure
 
@@ -334,7 +359,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
         """
         transaction_id = transaction.query._transaction_id
         if transaction_id in self._transactions:
-                del self._transactions[transaction_id]
+            del self._transactions[transaction_id]
 
         if transaction.timeout_call.active():
             transaction.timeout_call.cancel()
@@ -353,3 +378,14 @@ class KRPC_Sender(protocol.DatagramProtocol):
             transaction_id = random.getrandbits(constants.transaction_id_size)
             if transaction_id not in self._transactions:
                 return transaction_id
+
+
+    def _save_received_node(self, krpc, address):
+        """
+        save node from the out request node if it is not in routing table yet
+        """
+        if self.routing_table.get_node(krpc._from):
+            return
+        node = contact.Node(node_id=krpc._from, address=address)
+        self.routing_table.offer_node(node)
+        log.msg("save the request from node(%s:%s) done" % address)

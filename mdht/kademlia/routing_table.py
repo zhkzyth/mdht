@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """
 @author Greg Skoczek
 
@@ -15,6 +17,7 @@ from zope.interface import Interface, implements
 
 from mdht import constants
 from mdht.kademlia import kbucket
+
 
 class IRoutingTable(Interface):
     """
@@ -116,6 +119,12 @@ class TreeRoutingTable(object):
     def get_node(self, node_id):
         if node_id in self.nodes_dict:
             return self.nodes_dict[node_id]
+
+    def get_nodes(self):
+        """
+        dump out the routing_table nodes
+        """
+        return self.nodes_dict
 
     def get_node_by_address(self, address):
         if address in self.nodes_by_addr:

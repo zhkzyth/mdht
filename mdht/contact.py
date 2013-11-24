@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """
 @author Greg Skoczek
 
@@ -9,6 +11,7 @@ import sys
 
 from mdht.coding import basic_coder
 from mdht import constants
+
 
 class Node(object):
     """
@@ -35,7 +38,7 @@ class Node(object):
                     (either by sending an Error, or by timing out)
 
     """
-    def __init__(self, node_id, address):
+    def __init__(self, node_id=None, address=None, last_updated=None, totalrtt=None, successcount=None, failcount=None):
         # TODO make check interface.Don't use the encoding funcs directlly
         # So we don't crash here.
         basic_coder.encode_address(address)
@@ -44,10 +47,16 @@ class Node(object):
         self.node_id = node_id
         self.address = address
         # Statistical information
-        self.last_updated = time.time()
-        self.totalrtt = 0
-        self.successcount = 0
-        self.failcount = 0
+        if last_updated == None:
+            self.last_updated = time.time()
+            self.totalrtt = 0
+            self.successcount = 0
+            self.failcount = 0
+        else:
+            self.last_updated = last_updated
+            self.totalrtt = totalrtt
+            self.successcount = successcount
+            self.failcount = failcount
 
     def distance(self, node_id):
         """

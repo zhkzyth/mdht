@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """
 @author Greg Skoczek
 
@@ -5,6 +7,8 @@ Module containing classes that encapsulate
 KRPC Queries, Responses, and Errors
 
 """
+
+
 class _KRPC(object):
     """
     A KRPC message always has a transaction ID

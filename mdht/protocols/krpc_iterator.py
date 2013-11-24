@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """
 @author Greg Skoczek
 
@@ -6,9 +8,11 @@ Module containing an iterative KRPC protocol along with auxilary classes
 """
 from zope.interface import implements
 from twisted.internet import defer
+from twisted.python import log
 
 from mdht.protocols.krpc_responder import KRPC_Responder, IKRPC_Responder
 from mdht.protocols.errors import TimeoutError, KRPCError
+
 
 class IterationError(Exception):
     """
@@ -49,7 +53,7 @@ class IKRPC_Iterator(IKRPC_Responder):
 
         This function will send a find_node query to a collection of nodes.
         After all queries have either returned a response or timed out,
-        all newly found nodes and peers will be returned in a
+        all newly found nodes will be returned in a
         deferred callback. If nodes are supplied as an argument,
         no nodes will be taken from the routing table.
 
@@ -91,6 +95,7 @@ class IKRPC_Iterator(IKRPC_Responder):
 
         """
 
+
 class KRPC_Iterator(KRPC_Responder):
 
     implements(IKRPC_Iterator)
@@ -100,6 +105,7 @@ class KRPC_Iterator(KRPC_Responder):
 
     def find_iterate(self, target_id, nodes=None, timeout=None):
         # find_iterate returns only nodes
+        # but the api has to apply a two args funcs.XD
         d = self._iterate(self.find_node, target_id, nodes)
         d.addCallback(lambda (nodes, peers): nodes)
         return d
@@ -128,7 +134,6 @@ class KRPC_Iterator(KRPC_Responder):
 
         """
 
-        # print target_id,nodes
         # Prepare the seed nodes
         if nodes is None:
             # If no nodes are supplied, we have to
@@ -141,13 +146,13 @@ class KRPC_Iterator(KRPC_Responder):
         else:
             seed_nodes = nodes
 
+        log.msg("do one iteration to %s,\n the nodes is %s" % (target_id,seed_nodes))
         # Don't send duplicate queries
         seed_nodes = set(seed_nodes)
 
-        print seed_nodes
         # Send a query to each node and collect all
         # the deferred results
-        deferreds = list()
+        deferreds = []
         for node in seed_nodes:
             d = iterate_func(node.address, target_id, timeout)
             deferreds.append(d)

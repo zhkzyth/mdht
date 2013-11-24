@@ -71,7 +71,7 @@ host_bandwidth_rate = 5 * 1024      # 5 kilobytes
 
 
 # The default port on which DHTBot will run
-dht_port = 1800
+dht_port = 6900
 
 ###
 ### Internal use
