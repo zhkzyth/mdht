@@ -9,7 +9,7 @@ ROOT_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe
 MONGO_SETTING = {
     'host': 'localhost',
     'port': 27017,
-    'db': 'test',
+    'db': 'bt_tornado',
 }
 
 REDIS_SETTING = {
