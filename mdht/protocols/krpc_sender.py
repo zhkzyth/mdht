@@ -184,6 +184,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
             self._reactor = reactor
         self.node_id = long(node_id)
         self._transactions = dict()
+        # TODO no need to pass node_id in routing_table if we just share one
         self.routing_table = routing_table_class(self.node_id)
         self.db = database
 
