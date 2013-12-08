@@ -180,8 +180,7 @@ class TreeRoutingTable(object):
             # full. Check to see if we can split the kbucket
             # and insert the node into one of its children
             if (tnode.kbucket.full() and
-                tnode.kbucket.splittable() and
-                tnode.kbucket.key_in_range(self.node_id)):
+                tnode.kbucket.splittable()):
                 self._split(tnode)
                 node_accepted = self._offer_node(tnode, node)
                 return node_accepted
@@ -261,8 +260,7 @@ class TreeRoutingTable(object):
 
         """
         if (not tnode.is_leaf() or
-            not tnode.kbucket.splittable() or
-            not tnode.kbucket.key_in_range(self.node_id)):
+            not tnode.kbucket.splittable()):
             return False
 
         (lbucket, rbucket) = tnode.kbucket.split()
@@ -274,6 +272,14 @@ class TreeRoutingTable(object):
         self.active_kbuckets.remove(tnode.kbucket)
         self.active_kbuckets.extend([lbucket, rbucket])
         return True
+
+    @staticmethod
+    def instance(self, node_id=None):
+        """Return a global `Routing table` instance"""
+        if not hasattr(TreeRoutingTable, "_instance"):
+            TreeRoutingTable._instance = TreeRoutingTable()
+        return TreeRoutingTable._instance
+
 
 class _TreeNode(object):
     """
@@ -293,6 +299,7 @@ class _TreeNode(object):
         return (self.lchild, self.rchild) == (None, None)
 
 
+# TODO not use it right now...
 class SubsecondRoutingTable(TreeRoutingTable):
     def __init__(self, node_id):
         TreeRoutingTable.__init__(self, node_id)
@@ -315,7 +322,7 @@ class SubsecondRoutingTable(TreeRoutingTable):
         if valid_split:
             lbucket = tnode.lchild.kbucket
             rbucket = tnode.rchild.kbucket
-            if lbucket.key_in_range(self.node_id):
+            if lbucket.key_in_range(self.node_id): # the only use for self.node_id i can tell is use it to optimize....may need to rethink a new algorithm to avoid self.node_id using.
                 rbucket.maxsize = self._newbucketsize()
             else:
                 lbucket.maxsize = self._newbucketsize()

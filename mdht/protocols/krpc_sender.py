@@ -185,9 +185,12 @@ class KRPC_Sender(protocol.DatagramProtocol):
         self.node_id = long(node_id)
         self._transactions = dict()
         # TODO no need to pass node_id in routing_table if we just share one
-        self.routing_table = routing_table_class(self.node_id)
-        self.db = database
+        self.routing_table = routing_table_class.get_instance()
 
+
+
+        ## TODO move the init logic back to the singleton routing table class!!!
+        self.db = database
         node_list = database["routing_table"].find({"_id":{"$ne":str(self.node_id)}})
         for _node in node_list:
             node = contact.Node(node_id=int(_node["_id"]),
