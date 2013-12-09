@@ -41,7 +41,7 @@ tokensize = 32
 
 # Time in seconds after which an offered token (in response to get_peers)
 # will be terminated
-token_timeout = 600         # 10 minutes
+token_timeout = 60 * 10         # 10 minutes
 
 # Transaction ID size (bits)
 transaction_id_size = 32

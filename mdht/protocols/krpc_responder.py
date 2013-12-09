@@ -7,7 +7,7 @@ node functionality.
 import time
 import random
 import hashlib
-from collections import deque, defaultdict
+from collections import deque
 from zope.interface import implements
 from twisted.python import log
 
@@ -17,6 +17,7 @@ from mdht.coding import basic_coder
 from mdht.krpc_types import Query
 from mdht.protocols.krpc_sender import KRPC_Sender, IKRPC_Sender
 from mdht.kademlia.routing_table import TreeRoutingTable
+from mdht.source_info import Source_Info
 
 
 class IKRPC_Responder(IKRPC_Sender):
@@ -155,11 +156,7 @@ class KRPC_Responder(KRPC_Sender):
         KRPC_Sender.__init__(self, routing_table_class, node_id, _reactor)
 
         # Datastore is used for storing peers on torrents
-        self._datastore = defaultdict(set)
-        resources_set = database["sources"].find()
-        for resources in resources_set:
-             self._datastore[resources["_id"]] = [ (resource["ip"], resource["port"]) for resource in resources["peer_list"]]
-
+        self._datastore = Source_Info.instance()
         self._token_generator = _TokenGenerator()
 
         # TODO necess to store nodes periodically?
@@ -170,49 +167,8 @@ class KRPC_Responder(KRPC_Sender):
 
     def stopProtocol(self):
         log.msg("connection shutdown by admin, try to save the routing table.Be patient")
-        self._save_routing_table()
-        self._save_sources_peers()
-
-    def _save_routing_table(self):
-        nodes = self.routing_table.get_nodes()
-        params = []
-        for k in nodes:
-            params.append({
-                "_id":  str(nodes[k].node_id),
-                "ip":   nodes[k].address[0],
-                "port": nodes[k].address[1],
-                "last_updated": nodes[k].last_updated,
-                "totalrtt": nodes[k].totalrtt,
-                "successcount": nodes[k].successcount,
-                "failcount": nodes[k].failcount,
-            })
-        if params:
-            try:
-                database["routing_table"].insert(params, continue_on_error=True)
-                log.msg("nodes has saved to routing_table: %s" % params)
-            except:
-                log.error("save nodes to routing_table break.")
-
-    def _save_sources_peers(self):
-        documents = []
-        t_dict  = self._datastore
-        for target_id in t_dict:
-            peer_list = []
-            for peer in t_dict[target_id]:
-                peer_list.append({
-                    "ip": peer[0],
-                    "port": peer[1],
-                })
-            documents.append({
-                "_id": str(target_id),
-                "peer_list": peer_list,
-            })
-        if documents:
-            try:
-                database["sources"].insert(documents, continue_on_error=True)
-                log.msg("sources has saved to sources table: %s" % documents)
-            except:
-                log.error("save to sources table break.")
+        TreeRoutingTable.persist_routing_table()
+        Source_Info.persist_sources_peers()
 
 
     def ping_Received(self, query, address):
@@ -241,7 +197,7 @@ class KRPC_Responder(KRPC_Sender):
         log.msg("get_peers_Received from node(%s:%s)" % address)
 
         nodes = None
-        peers = self._datastore.get(query.target_id) or list()
+        peers = self._datastore.get(query.target_id)
         # Check if we have peers for the target infohash
         # If we don't, return the closest nodes in our routing table instead
         dont_have_peers = len(peers) == 0
@@ -269,7 +225,7 @@ class KRPC_Responder(KRPC_Sender):
             # in our datastore
             node_ip, node_port = address
             peer_address = (node_ip, query.port)
-            self._datastore[query.target_id].add(peer_address)
+            self._datastore.add(query.target_id, peer_address)
             # announce_peer responses have no additional
             # data (and serve just as a confirmation)
             response = query.build_response()

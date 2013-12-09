@@ -20,6 +20,7 @@ REDIS_SETTING = {
     },
 }
 
+#TODO move to constant
 ROUTING_TIME = 30# per second
 
 NODES_NUM = 30

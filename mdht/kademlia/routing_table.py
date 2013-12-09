@@ -15,9 +15,9 @@ from collections import defaultdict
 from twisted.python import log
 from zope.interface import Interface, implements
 
-from mdht import constants
+from mdht import constants, contact
 from mdht.kademlia import kbucket
-
+from mdht.database import database
 
 class IRoutingTable(Interface):
     """
@@ -82,8 +82,7 @@ class TreeRoutingTable(object):
 
     implements(IRoutingTable)
 
-    def __init__(self, node_id):
-        self.node_id = node_id
+    def __init__(self):
         k = kbucket.KBucket(0, 2**constants.id_size)
         self.root = _TreeNode(k)
         self.nodes_dict = {}
@@ -274,11 +273,55 @@ class TreeRoutingTable(object):
         return True
 
     @staticmethod
-    def instance(self, node_id=None):
+    def instance():
         """Return a global `Routing table` instance"""
         if not hasattr(TreeRoutingTable, "_instance"):
             TreeRoutingTable._instance = TreeRoutingTable()
+            TreeRoutingTable._init_routing_table()
+
         return TreeRoutingTable._instance
+
+    @staticmethod
+    def _init_routing_table():
+        """
+        restore routing table
+        """
+        node_list = database["routing_table"].find()
+        for _node in node_list:
+            node = contact.Node(node_id=int(_node["_id"]),
+                                address=(_node["ip"], _node["port"]),
+                                last_updated=_node["last_updated"],
+                                totalrtt=_node["totalrtt"],
+                                successcount=_node["successcount"],
+                                failcount=_node["failcount"],
+                                )
+            TreeRoutingTable._instance.offer_node(node)
+
+    @staticmethod
+    def persist_routing_table():
+        """
+        save routing table nodes in db
+        """
+        if not hasattr(TreeRoutingTable, "_saved"):
+            TreeRoutingTable._saved = True
+            nodes = TreeRoutingTable._instance.get_nodes()
+            params = []
+            for k in nodes:
+                params.append({
+                    "_id":  str(nodes[k].node_id),
+                    "ip":   nodes[k].address[0],
+                    "port": nodes[k].address[1],
+                    "last_updated": nodes[k].last_updated,
+                    "totalrtt": nodes[k].totalrtt,
+                    "successcount": nodes[k].successcount,
+                    "failcount": nodes[k].failcount,
+                })
+            if params:
+                try:
+                    database["routing_table"].insert(params, continue_on_error=True)
+                    log.msg("nodes has saved to routing_table: %s" % params)
+                except:
+                    log.error("save nodes to routing_table break.")
 
 
 class _TreeNode(object):
@@ -322,7 +365,9 @@ class SubsecondRoutingTable(TreeRoutingTable):
         if valid_split:
             lbucket = tnode.lchild.kbucket
             rbucket = tnode.rchild.kbucket
-            if lbucket.key_in_range(self.node_id): # the only use for self.node_id i can tell is use it to optimize....may need to rethink a new algorithm to avoid self.node_id using.
+            if lbucket.key_in_range(self.node_id):
+                # the only use for self.node_id i can tell is use it to optimize....
+                # may need to rethink a new algorithm to avoid self.node_id using.
                 rbucket.maxsize = self._newbucketsize()
             else:
                 lbucket.maxsize = self._newbucketsize()
