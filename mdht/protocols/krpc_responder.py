@@ -168,8 +168,6 @@ class KRPC_Responder(KRPC_Sender):
     def stopProtocol(self):
         log.msg("connection shutdown by admin, try to save the routing table.Be patient")
         TreeRoutingTable.persist_routing_table()
-        Source_Info.persist_sources_peers()
-
 
     def ping_Received(self, query, address):
         # The ping response needs no additional protocol
@@ -209,6 +207,7 @@ class KRPC_Responder(KRPC_Sender):
         token = self._token_generator.generate(query, address)
         # Attach the peers, nodes, and token to the response message
         response = query.build_response(nodes=nodes, peers=peers, token=token)
+        log.msg("get_peers_Received response:%s", response)
         self.sendResponse(response, address)
 
     def announce_peer_Received(self, query, address):
