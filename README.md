@@ -15,6 +15,8 @@ I fork it from [mdht][1],and hack a lot to fit my need.so it may not be good to 
 - use gevent to reimplement it
 
 ### dev log
+- `2013-12.10`
+  - change source info share with mongodb
 - `2013-12.9`
   - change sharing with mem support,not mongodb
 - `2013-11-24`
