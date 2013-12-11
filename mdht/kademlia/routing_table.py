@@ -19,6 +19,7 @@ from mdht import constants, contact
 from mdht.kademlia import kbucket
 from mdht.database import database
 
+
 class IRoutingTable(Interface):
     """
     A routing table as described in the paper on kademlia
@@ -298,31 +299,46 @@ class TreeRoutingTable(object):
             TreeRoutingTable._instance.offer_node(node)
 
     @staticmethod
+    def _save_routing_table():
+        """
+        save routing nodes in db
+        """
+        nodes = TreeRoutingTable._instance.get_nodes()
+        params = []
+        for k in nodes:
+            params.append({
+                "_id":  str(nodes[k].node_id),
+                "ip":   nodes[k].address[0],
+                "port": nodes[k].address[1],
+                "last_updated": nodes[k].last_updated,
+                "totalrtt": nodes[k].totalrtt,
+                "successcount": nodes[k].successcount,
+                "failcount": nodes[k].failcount,
+            })
+        if params:
+            try:
+                database["routing_table"].insert(params, continue_on_error=True)
+                log.msg("done! nodes has saved to routing_table.")
+            except:
+                log.error("opps! save nodes to routing_table break.")
+
+    @staticmethod
     def persist_routing_table():
         """
-        save routing table nodes in db
+        persist routing table
         """
         if not hasattr(TreeRoutingTable, "_saved"):
+            log.msg("try to save the routing table.Be patient")
             TreeRoutingTable._saved = True
-            nodes = TreeRoutingTable._instance.get_nodes()
-            params = []
-            for k in nodes:
-                params.append({
-                    "_id":  str(nodes[k].node_id),
-                    "ip":   nodes[k].address[0],
-                    "port": nodes[k].address[1],
-                    "last_updated": nodes[k].last_updated,
-                    "totalrtt": nodes[k].totalrtt,
-                    "successcount": nodes[k].successcount,
-                    "failcount": nodes[k].failcount,
-                })
-            if params:
-                try:
-                    database["routing_table"].insert(params, continue_on_error=True)
-                    log.msg("nodes has saved to routing_table: %s" % params)
-                except:
-                    log.error("save nodes to routing_table break.")
+            TreeRoutingTable._save_routing_table()
 
+    @staticmethod
+    def routine_save_routing_table():
+        """
+        save routing table every x seconds
+        """
+        log.msg("routing: save routing_table to db")
+        TreeRoutingTable._save_routing_table()
 
 class _TreeNode(object):
     """

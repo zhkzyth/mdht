@@ -84,3 +84,7 @@ dht_port = 6900
 # Note: For proper functionality, token_timeout should
 # be a multiple of _secret_timeout
 _secret_timeout = 5 * 60    # 5 minutes
+
+### time interval to save db
+# ROUTING_TIME = 12*60*60 #second
+ROUTING_TIME = 30 #second

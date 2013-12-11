@@ -10,9 +10,9 @@ import hashlib
 from collections import deque
 from zope.interface import implements
 from twisted.python import log
+from twisted.internet import task
 
 from mdht import constants
-from mdht.database import database
 from mdht.coding import basic_coder
 from mdht.krpc_types import Query
 from mdht.protocols.krpc_sender import KRPC_Sender, IKRPC_Sender
@@ -159,14 +159,12 @@ class KRPC_Responder(KRPC_Sender):
         self._datastore = Source_Info.instance()
         self._token_generator = _TokenGenerator()
 
-        # TODO necess to store nodes periodically?
         # set a routine to keep routing table updated
-        # smore data lossing is ok here
-        # save_routing_table_loop = task.LoopingCall(save_routing_table)
-        # save_routing_table_loop.start(ROUTING_TIME)
+        # little data lossing is ok here
+        save_routing_table_loop = task.LoopingCall(TreeRoutingTable.routine_save_routing_table)
+        save_routing_table_loop.start(constants.ROUTING_TIME)
 
     def stopProtocol(self):
-        log.msg("connection shutdown by admin, try to save the routing table.Be patient")
         TreeRoutingTable.persist_routing_table()
 
     def ping_Received(self, query, address):

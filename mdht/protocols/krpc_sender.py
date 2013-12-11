@@ -183,7 +183,6 @@ class KRPC_Sender(protocol.DatagramProtocol):
             self._reactor = reactor
         self.node_id = long(node_id)
         self._transactions = dict()
-        # TODO no need to pass node_id in routing_table if we just share one
         self.routing_table = routing_table_class.instance()
 
     def datagramReceived(self, data, address):
@@ -320,7 +319,6 @@ class KRPC_Sender(protocol.DatagramProtocol):
         # is either a TimeoutError or a KRPCError
         f = failure.trap(TimeoutError, KRPCError)
 
-        # FIXME not thread save? but there is thread at all.
         import copy
         errornodes = copy.deepcopy(self.routing_table.get_node_by_address(address))
         if errornodes is None:
