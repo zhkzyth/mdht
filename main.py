@@ -6,9 +6,8 @@ from logging import DEBUG
 from twisted.internet import reactor
 
 from logger import Logger
-from mdht import constants
 from mdht.mdht_node import MDHT
-from config import ROOT_PATH, NODES_NUM
+from config import ROOT_PATH, NODES_NUM, constants
 
 #add project path
 sys.path.append(ROOT_PATH)

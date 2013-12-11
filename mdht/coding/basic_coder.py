@@ -11,7 +11,7 @@ standard as part of BitTorrent.
 """
 import socket
 
-from mdht import constants
+from config import constants
 
 
 class InvalidDataError(Exception):

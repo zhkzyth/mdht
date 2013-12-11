@@ -12,7 +12,7 @@ from zope.interface import implements
 from twisted.python import log
 from twisted.internet import task
 
-from mdht import constants
+from config import constants, ROUTING_TIME
 from mdht.coding import basic_coder
 from mdht.krpc_types import Query
 from mdht.protocols.krpc_sender import KRPC_Sender, IKRPC_Sender
@@ -162,7 +162,7 @@ class KRPC_Responder(KRPC_Sender):
         # set a routine to keep routing table updated
         # little data lossing is ok here
         save_routing_table_loop = task.LoopingCall(TreeRoutingTable.routine_save_routing_table)
-        save_routing_table_loop.start(constants.ROUTING_TIME)
+        save_routing_table_loop.start(ROUTING_TIME)
 
     def stopProtocol(self):
         TreeRoutingTable.persist_routing_table()

@@ -8,7 +8,7 @@ kademlia reference paper and the BitTorrent DHT BEP
 """
 from twisted.python import log
 
-from mdht import constants
+from config import constants
 
 class KBucketError(Exception):
     """
@@ -162,7 +162,7 @@ class KBucket(object):
     def get_nodes(self):
         """
         Returns an iterable containing the nodes in this KBucket
-        
+
         """
         return set(self._nodes)
 
@@ -172,9 +172,9 @@ class KBucket(object):
     def get_stalest_node(self):
         """
         Returns the node that has been refreshed the longest time ago
-        
+
         If this KBucket is empty, None is returned
-        
+
         """
         if self.empty():
             return None
@@ -187,7 +187,7 @@ class KBucket(object):
     def _get_worst_node(self):
         """
         Returns the worst node found in our kbucket
-        
+
         The quality of a node is determined by
         the `better_than' function
         @see mdht.contact.Node.better_than

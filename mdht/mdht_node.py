@@ -6,9 +6,8 @@ An interface to mdht that abstracts away Twisted details (like the reactor)
 from twisted.internet import reactor, defer
 from twisted.python import log
 
-from mdht import constants
 from mdht.protocols.krpc_iterator import IKRPC_Iterator, KRPC_Iterator
-from config import HOOK_ITERATE
+from config import HOOK_ITERATE, constants
 
 class MDHT(object):
 

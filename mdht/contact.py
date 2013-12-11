@@ -10,7 +10,7 @@ import time
 import sys
 
 from mdht.coding import basic_coder
-from mdht import constants
+from config import constants
 
 
 class Node(object):

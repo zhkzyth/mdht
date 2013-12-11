@@ -14,7 +14,8 @@ from zope.interface import implements, Interface
 from twisted.python import log
 from twisted.internet import reactor, defer, protocol
 
-from mdht import constants, contact
+from config import constants
+from mdht import contact
 from mdht.coding import krpc_coder
 from mdht.coding.krpc_coder import InvalidKRPCError
 from mdht.krpc_types import Query, Response, Error

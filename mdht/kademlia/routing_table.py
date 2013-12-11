@@ -15,7 +15,8 @@ from collections import defaultdict
 from twisted.python import log
 from zope.interface import Interface, implements
 
-from mdht import constants, contact
+from config import constants
+from mdht import contact
 from mdht.kademlia import kbucket
 from mdht.database import database
 
