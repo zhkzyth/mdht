@@ -7,14 +7,15 @@ I fork it from [mdht][1],and hack a lot to fit my need.so it may not be good to 
 
 ### TODO
 - node monitor
-  - heartbeat
-  - activity
+  - heartbeat/activity
+  - reconect
 - make wiki better look
 - structure pics
 - test
-- use gevent to reimplement it
 
 ### dev log
+- `2013-12.11`
+  - add persitent stragety for routing table
 - `2013-12.10`
   - change source info share with mongodb
   - delete master branch and repush a temp branch

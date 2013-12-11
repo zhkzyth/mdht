@@ -10,9 +10,8 @@ import hashlib
 from collections import deque
 from zope.interface import implements
 from twisted.python import log
-from twisted.internet import task
 
-from config import constants, ROUTING_TIME
+from config import constants
 from mdht.coding import basic_coder
 from mdht.krpc_types import Query
 from mdht.protocols.krpc_sender import KRPC_Sender, IKRPC_Sender
@@ -158,11 +157,6 @@ class KRPC_Responder(KRPC_Sender):
         # Datastore is used for storing peers on torrents
         self._datastore = Source_Info.instance()
         self._token_generator = _TokenGenerator()
-
-        # set a routine to keep routing table updated
-        # little data lossing is ok here
-        save_routing_table_loop = task.LoopingCall(TreeRoutingTable.routine_save_routing_table)
-        save_routing_table_loop.start(ROUTING_TIME)
 
     def stopProtocol(self):
         TreeRoutingTable.persist_routing_table()

@@ -13,9 +13,10 @@ Implementation of a RoutingTable for the Kademlia network
 from collections import defaultdict
 
 from twisted.python import log
+from twisted.internet import task
 from zope.interface import Interface, implements
 
-from config import constants
+from config import constants, ROUTING_TIME
 from mdht import contact
 from mdht.kademlia import kbucket
 from mdht.database import database
@@ -280,6 +281,13 @@ class TreeRoutingTable(object):
         if not hasattr(TreeRoutingTable, "_instance"):
             TreeRoutingTable._instance = TreeRoutingTable()
             TreeRoutingTable._init_routing_table()
+
+            # set a routine to keep routing table updated
+            # little data lossing is ok here
+            save_routing_table_loop = task.LoopingCall(TreeRoutingTable.routine_save_routing_table)
+            save_routing_table_loop.start(ROUTING_TIME)
+
+
 
         return TreeRoutingTable._instance
 
