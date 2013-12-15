@@ -21,15 +21,11 @@ REDIS_SETTING = {
     },
 }
 
-##
-NODES_NUM = 30
+# nodes num for opening
+NODES_NUM = 50
 
-##
+#
 HOOK_ITERATE = long("D20E34D7C69C296B7CB7447532DF6AA4D2BE001C", 16)
-
-### time interval to save db
-# ROUTING_TIME = 12*60*60 #second
-ROUTING_TIME = 30 #second
 
 # constants used by mdht lib
 class constants(object):
@@ -43,7 +39,7 @@ constants.k = 8
 constants.id_size = 160
 
 # Time after which an RPC will timeout and fail (seconds)
-constants.rpctimeout = 30
+constants.rpctimeout = 60
 
 # Time after which a high level query (as used in the SimpleNodeProtocol)
 # should timeout (seconds)
@@ -67,7 +63,7 @@ constants.NICEinterval = 6
 
 # This interval determines how often the DHT's state data will be
 # saved into a file on disk (seconds)
-constants.DUMPinterval = 180          # 3 minutes
+constants.DUMPinterval = 3 * 60 # 3 minutes
 
 # Size of the token (bits)
 constants.tokensize = 32
@@ -117,6 +113,13 @@ constants.dht_port = 6900
 # Note: For proper functionality, token_timeout should
 # be a multiple of _secret_timeout
 constants._secret_timeout = 5 * 60    # 5 minutes
+
+
+## search width for closest nodes
+constants.search_width = 32
+
+## search retries for iteration funcs like find_node or whatever
+constants.search_retries = 4
 
 try:
     from local_settings import *

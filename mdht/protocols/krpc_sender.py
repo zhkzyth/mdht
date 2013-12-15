@@ -261,8 +261,8 @@ class KRPC_Sender(protocol.DatagramProtocol):
         # (supply the address and transaction for extra processing)
         t.deferred.addCallback(self._query_success_callback, address, t)
         t.deferred.addErrback(self._query_failure_errback, address, t)
-        # Set up a timeout during which this transaction
-        # has to complete (ie: receive a response or error)
+        # Set up a timeout during which this transaction has to complete
+        # (ie: receive a response or error)
         t.timeout_call = self._reactor.callLater(constants.rpctimeout,
                                 t.deferred.errback, TimeoutError())
         # Store this transaction, so when we receive responses back,

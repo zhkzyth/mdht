@@ -3,11 +3,12 @@
 """
 An interface to mdht that abstracts away Twisted details (like the reactor)
 """
+import itertools
 from twisted.internet import reactor, defer
 from twisted.python import log
 
-from mdht.protocols.krpc_iterator import IKRPC_Iterator, KRPC_Iterator
-from config import HOOK_ITERATE, constants
+from mdht.protocols.krpc_iterator import IKRPC_Iterator, TEMP_KRPC_Iterator
+from config import constants
 
 class MDHT(object):
 
@@ -29,17 +30,23 @@ class MDHT(object):
 
         """
         self.node_id = node_id
+        self.retries = 0
+        self.queried = set()
+        self.alive = set()
+        self.add_live = set()
+        self.response_node = set()
+        self.min_alive_dist = float("+inf")
 
         # Let Twisted know about our MDHT node listening on a UDP port
-        self.proto = KRPC_Iterator(node_id)
+        self.proto = TEMP_KRPC_Iterator(node_id)
         reactor.listenUDP(port, self.proto)
 
         # Patch in some functions that are found on the protocol
         self._proxy_funcs()
 
-        # Bootstrap our freshly created node
+        # Bootstrap our freshly created node and join the dht network
         d = self._bootstrap(bootstrap_addresses)
-        d.addCallback(self.broadcast_node, hook_iterate=HOOK_ITERATE)
+        d.addCallback(self.join)
 
     def _proxy_funcs(self):
         funcnames = filter(lambda name:
@@ -51,15 +58,6 @@ class MDHT(object):
             func = getattr(self.proto, funcname, None)
             assert func is not None
             setattr(self, funcname, func)
-
-    def run(self):
-        """
-        Starts the MDHT loop
-
-        This function will block until MDHT.halt() is called
-
-       """
-        pass
 
     def _bootstrap(self, addresses=constants.bootstrap_addresses):
         """
@@ -74,66 +72,120 @@ class MDHT(object):
         dl = []
         for hostname, port in addresses:
             d = reactor.resolve(hostname)
-            d.addCallback(self.save_init_node, port)
+            d.addCallback(self._ping, port)
             dl.append(d)
 
         return defer.DeferredList(dl)
 
-    def ping_success(self, result):
-        log.msg("ping success, and the response node is: %s" % result)
+    def _ping(self, ip, port):
+        self.ping((ip, port), None)
+
+    def join(self, results):
+        # do ping
+        joined = False
+
+        for (success, result) in results:
+            if success and not joined:
+                joined = True
+                self.response_node = self.proto.routing_table.get_closest_nodes(self.node_id)
+                self.find_self()
+
+    # join mdht network
+    @defer.inlineCallbacks
+    def find_self(self):
+        log.msg("ready to query %s nodes in this query" % len(self.response_node))
+
+        # the next nodes will be queried in this iteration, mark them
+        add_queried = set(self.response_node)
+        # the all quired nodes in this search
+        self.queried = self.queried.union(add_queried)
+
+        return_nodes = yield self.search_call(add_queried)
+
+        # filter out nodes that has responsed
+        add_live = set()
+        for return_node in return_nodes:
+            add_live.add(return_node[0])
+
+        self.alive = self.alive.union(add_live)
+
+        # Accumulate all nodes from the successful responses.
+        # Calculate the relative distance to all of these nodes
+        # and keep the closest nodes which has not already been
+        # queried in a previous iteration
+        temp_dict = []
+        for return_node in return_nodes:
+            temp_dict.append(return_node[1])
+        all_nodes = list(itertools.chain(*temp_dict))
+        new_nodes = [node for node in all_nodes if node not in self.queried]
+
+        # the next queried nodes are the closest nodes in the responsed nodes replied
+        # from node queried in this search iteration.
+        new_next = [ node for node in self.get_closest_nodes(self.node_id, new_nodes, search_width=constants.search_width)]
+
+        # TODO how we calculate the min for our nodes????
+        # Check if the closest node in the work queue is closer
+        # to the target than the closest responsive node that was
+        # found in this iteration.
+        if len(self.alive) == 0:
+            min_alive_dist = float("+inf")
+        else:
+            min_alive_dist =  self.find_live_node_min(add_live)
+
+        if len(new_next) == 0:
+            min_queue_dist = float("+inf")
+        else:
+            min_queue_dist = self.find_new_next_min(new_next)
+
+        # update self.response_node for next iteration
+        self.response_node = new_next
+        new_next = None
+
+        # Check if the closest node in the work queue is closer
+        # to the infohash than the closest responsive node.
+        if  min_queue_dist < min_alive_dist:
+            self.retries = 0
+        else:
+            self.retries += 1
+
+        if self.retries == constants.search_retries:
+            self.clear_state()
+        else:
+            reactor.callLater(0, self.find_self)
+
+    def find_live_node_min(self, nodes):
+        sorted_list = sorted(nodes, key=(lambda node: node.distance(self.node_id)))
+        new_min_dist = sorted_list[0].distance(self.node_id)
+        if self.min_alive_dist < new_min_dist:
+            self.min_alive_dist = new_min_dist
+
+    def find_new_next_min(self, nodes):
+        sorted_list = sorted(nodes, key=(lambda node: node.distance(self.node_id)))
+        return sorted_list[0].distance(self.node_id)
+
+    @defer.inlineCallbacks
+    def search_call(self, nodes):
+        # result structure like below:
+        # [(success, (source_node, response_nodes),...]
+        result = yield self.find_iterate(self.node_id, nodes=nodes)
+        defer.returnValue(result)
+
+    def clear_state(self):
+        """
+        reduce the mem use
+        """
+        log.msg("clear iterating state")
+        self.retries = 0
+        self.queried = set()
+        self.alive = set()
+        self.add_live = set()
+        self.response_node = set()
+        self.min_alive_dist = float("+inf")
+
+    def get_closest_nodes(self, target, nodes, search_width):
+
+        sorted(nodes, key=(lambda node: node.distance(target)))
+
+        result = nodes[:search_width]
+
         return result
-
-    ## TODO log the timeout,so we need to do another reconnect
-    ## or change another bootstrap address
-    def ping_fail(self, error):
-        log.msg(repr(error))
-        return None
-
-    def save_init_node(self, ip_address=None, port=None):
-        log.msg(ip_address, port)
-        d = self.ping((ip_address,port))
-        d.addCallbacks(self.ping_success, self.ping_fail)
-        return None
-
-    def schedule(self, delay, func, *args, **kwargs):
-        """
-        Run the specified function 'func' in 'delay' seconds
-
-        delay: number of seconds to wait (float)
-        func: the function to run, NOTE! this function must be nonblocking
-        args: positional arguments for the function
-        kwargs: keyword arguments for the function
-
-        """
-        reactor.callLater(delay, func)
-
-    def halt(self,result):
-        """
-        Terminates the MDHT client
-
-        Note!! This function can only be called once!
-
-        """
-        pass
-
-    def get_nodes_num(self):
-        """
-
-        Return the size of our routing_table size
-
-        """
-        return len(self.proto.routing_table.nodes_dict)
-
-    def broadcast_node(self, bootstrap_node=None, hook_iterate=HOOK_ITERATE):
-        """
-        broadcast node to make it better to hide in the network
-        """
-        d = self.find_iterate(hook_iterate)
-        d.addCallback(self._broadcast_node)
-
-    def _broadcast_node(self, nodes):
-        log.msg("broadcast_node %s successful.\n and response nodes are %s.\n we need to do ping requests and save it to routing table. " % (self.node_id, nodes))
-        #change format to do ping request.LOL
-        for node in nodes:
-            self.save_init_node(**{"ip_address": node.address[0],
-                                   "port": node.address[1]})

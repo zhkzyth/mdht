@@ -16,7 +16,7 @@ from twisted.python import log
 from twisted.internet import task
 from zope.interface import Interface, implements
 
-from config import constants, ROUTING_TIME
+from config import constants
 from mdht import contact
 from mdht.kademlia import kbucket
 from mdht.database import database
@@ -285,9 +285,7 @@ class TreeRoutingTable(object):
             # set a routine to keep routing table updated
             # little data lossing is ok here
             save_routing_table_loop = task.LoopingCall(TreeRoutingTable.routine_save_routing_table)
-            save_routing_table_loop.start(ROUTING_TIME)
-
-
+            save_routing_table_loop.start(constants.DUMPinterval)
 
         return TreeRoutingTable._instance
 

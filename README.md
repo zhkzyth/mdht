@@ -6,6 +6,7 @@ A library with protocols needed to run a Mainline DHT node (written with Twisted
 I fork it from [mdht][1],and hack a lot to fit my need.so it may not be good to make pull requests.
 
 ### TODO
+- bt info
 - node monitor
   - heartbeat/activity
   - reconect
@@ -14,6 +15,8 @@ I fork it from [mdht][1],and hack a lot to fit my need.so it may not be good to 
 - test
 
 ### dev log
+- `2013-12.15`
+  - make a better distributed algorithm
 - `2013-12.11`
   - add persitent stragety for routing table
 - `2013-12.10`

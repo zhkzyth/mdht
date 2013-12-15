@@ -16,17 +16,19 @@ sys.path.append(ROOT_PATH)
 def main():
     #啟動500個節點監聽請求
     num = 0
+    node_id_list = []
     _port = constants.dht_port
 
     Logger.basicConfig(level=DEBUG)
     # Logger.basicConfig(level=DEBUG, filename=ROOT_PATH+"/log/mdht.log")
 
     # distribute 500 nodes
+    max_node_id = long(2**160)
+    piece = max_node_id/NODES_NUM
     while  num<NODES_NUM:
-        rand_id = random.getrandbits(160)
-
-        MDHT(rand_id, bootstrap_addresses=constants.bootstrap_addresses, port=_port)
-
+        node_id = random.randint(0,piece) + num*piece
+        node_id_list.append(node_id)
+        MDHT(node_id, bootstrap_addresses=constants.bootstrap_addresses, port=_port)
         num += 1
         _port += 1
 
