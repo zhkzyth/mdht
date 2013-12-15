@@ -12,7 +12,7 @@ from twisted.python import log
 
 from mdht.protocols.krpc_responder import KRPC_Responder, IKRPC_Responder
 from mdht.protocols.errors import TimeoutError, KRPCError
-from config import constants
+
 
 class IterationError(Exception):
     """
@@ -95,7 +95,6 @@ class IKRPC_Iterator(IKRPC_Responder):
 
         """
 
-
 class KRPC_Iterator(KRPC_Responder):
 
     implements(IKRPC_Iterator)
@@ -104,36 +103,16 @@ class KRPC_Iterator(KRPC_Responder):
         KRPC_Responder.__init__(self, node_id=node_id, _reactor=_reactor)
 
     def find_iterate(self, target_id, nodes=None, timeout=None):
-        # find_iterate returns only nodes
-        # but the api has to apply a two args funcs.XD
         d = self._iterate(self.find_node, target_id, nodes)
         d.addCallback(lambda (nodes, peers): nodes)
         return d
 
     def get_iterate(self, target_id, nodes=None, timeout=None):
-        # Get_iterate returns the full tuple (nodes, peers)
+        #TODO not yet test
         d = self._iterate(self.get_peers, target_id, nodes)
         return d
 
     def _iterate(self, iterate_func, target_id, nodes=None, timeout=None):
-        """
-        Perform one iteration towards the target_id
-
-        @param iterate_func: the function used to iterate towards the
-            target id. This function is either get_peers or find_node
-            as found on KRPC_Responder
-        @returns a deferred which fires the callback with a tuple
-            (nodes, peers), where
-                peers: all the new peers that have been discovered
-                    (if the iterate_func is get_peers)
-                nodes: all the new nodes that been discovered
-            The errback is fired with an IterationError if an
-            error occurs in the iteration
-
-        @see IterationError
-
-        """
-
         # Prepare the seed nodes
         if nodes is None:
             # If no nodes are supplied, we have to
@@ -155,16 +134,28 @@ class KRPC_Iterator(KRPC_Responder):
         deferreds = []
         for node in seed_nodes:
             d = iterate_func(node.address, target_id, timeout)
+            if iterate_func == self.find_node:
+                d.addCallback(self._reconsturct_data, node)
             deferreds.append(d)
 
         # Create a meta-object that fires when
         # all deferred results fire
-        dl = defer.DeferredList(deferreds)
+        # and set consumeErrors to True cause iterate_func timeout
+        # error is ok.
+        dl = defer.DeferredList(deferreds, consumeErrors=True)
         # Make sure atleast one query succeeds
         # and collect the resulting nodes/peers
         dl.addCallback(self._check_query_success_callback)
         dl.addCallback(self._collect_nodes_and_peers_callback)
         return dl
+
+    def _reconsturct_data(self, result, seed_node):
+        """
+        Get result nodes from find_node search,
+        and we do some reconstruction to be with seed_node.
+        """
+        result.nodes = (seed_node, result.nodes)
+        return result
 
     def _check_query_success_callback(self, results):
         """
@@ -189,18 +180,17 @@ class KRPC_Iterator(KRPC_Responder):
 
         @returns a tuple of iterables (new_nodes, new_peers)
         """
-        new_nodes = set()
+        new_nodes = []
         new_peers = set()
+
         # result is a list of (success, result) tuples,
         # where success is a boolean, and result is
         # the callback value of the deferred
         for (was_successful, result) in results:
             if was_successful:
-                # A successful response has either
-                # nodes or peers for us to collect
                 response = result
                 if response.nodes is not None:
-                    new_nodes.update(response.nodes)
+                    new_nodes.append(response.nodes)
                 if response.peers is not None:
                     new_peers.update(response.peers)
             else:
@@ -208,108 +198,9 @@ class KRPC_Iterator(KRPC_Responder):
                 # peers/nodes. Silently drop any such queries
                 failure = result
                 self._silence_error(failure)
+
+        # return outcome
         return (new_nodes, new_peers)
-
-    def _silence_error(self, failure):
-        """
-        Trap sendQuery errors
-
-        @see mdht.protocols.krpc_sender.sendQuery
-
-        """
-        failure.trap(TimeoutError, KRPCError)
-
-
-class TEMP_KRPC_Iterator(KRPC_Responder):
-
-    implements(IKRPC_Iterator)
-
-    def __init__(self, node_id=None, _reactor=None):
-        KRPC_Responder.__init__(self, node_id=node_id, _reactor=_reactor)
-
-    def find_iterate(self, target_id, nodes=None, timeout=None):
-        d = self._iterate(self.find_node, target_id, nodes)
-        return d
-
-    def get_iterate(self, target_id, nodes=None, timeout=None):
-        pass
-
-    def _iterate(self, iterate_func, target_id, nodes=None, timeout=None):
-        """
-        """
-        # Prepare the seed nodes
-        if nodes is None:
-            # If no nodes are supplied, we have to
-            # get some from the routing table
-            seed_nodes = self.routing_table.get_closest_nodes(target_id)
-            if len(seed_nodes) == 0:
-                return defer.fail(
-                    IterationError("No nodes were supplied and no nodes "
-                        + "were found in the routing table"))
-        else:
-            seed_nodes = nodes
-
-        log.msg("do one iteration to %s,\n the nodes is %s" % (target_id,seed_nodes))
-        # Don't send duplicate queries
-        seed_nodes = set(seed_nodes)
-
-        # Send a query to each node and collect all
-        # the deferred results
-        deferreds = []
-        for node in seed_nodes:
-            d = iterate_func(node.address, target_id, timeout)
-            d.addCallback(self._reconsturct_data, node)
-            deferreds.append(d)
-
-        # Create a meta-object that fires when
-        # all deferred results fire
-        dl = defer.DeferredList(deferreds)
-        # Make sure atleast one query succeeds
-        # and collect the resulting nodes/peers
-        dl.addCallback(self._check_query_success_callback)
-        dl.addCallback(self._collect_nodes)
-        return dl
-
-    def _reconsturct_data(self, result, node):
-        """
-        get result nodes from find_node search, and we do some reconstruction for it.
-        """
-        outcome = (node, result.nodes)
-        return outcome
-
-    def _check_query_success_callback(self, results):
-        """
-        Ensure that atleast one outbound query succeeded
-
-        Throw an IterationError otherwise
-
-        """
-        for (success, result) in results:
-            # If atleast one succeeded, we will
-            # not throw an exception, so we can
-            # pass the results on for further processing
-            if success:
-                return results
-        # It is erroneous behavior for all of the
-        # queries to have failed (Let the user know)
-        raise IterationError("All outbound queries timed out")
-
-    def _collect_nodes(self, results):
-        """
-        """
-        outcome = []
-        # result is a list of (success, result) tuples,
-        # where success is a boolean, and result is
-        # the callback value of the deferred
-        for (was_successful, result) in results:
-            if was_successful:
-                outcome.append(result)
-            else:
-                # A failed query provides no new
-                # peers/nodes. Silently drop any such queries
-                failure = result
-                self._silence_error(failure)
-        return outcome
 
     def _silence_error(self, failure):
         """

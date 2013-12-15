@@ -7,8 +7,8 @@ import itertools
 from twisted.internet import reactor, defer
 from twisted.python import log
 
-from mdht.protocols.krpc_iterator import IKRPC_Iterator, TEMP_KRPC_Iterator
-from config import constants
+from mdht.protocols.krpc_iterator import IKRPC_Iterator, KRPC_Iterator
+from config import constants, STARTUP_RETRIES
 
 class MDHT(object):
 
@@ -37,8 +37,10 @@ class MDHT(object):
         self.response_node = set()
         self.min_alive_dist = float("+inf")
 
+        self.startup_retries = 0
+
         # Let Twisted know about our MDHT node listening on a UDP port
-        self.proto = TEMP_KRPC_Iterator(node_id)
+        self.proto = KRPC_Iterator(node_id)
         reactor.listenUDP(port, self.proto)
 
         # Patch in some functions that are found on the protocol
@@ -73,15 +75,25 @@ class MDHT(object):
         for hostname, port in addresses:
             d = reactor.resolve(hostname)
             d.addCallback(self._ping, port)
+            d.addErrback(self._logerror, hostname)
             dl.append(d)
 
         return defer.DeferredList(dl)
 
     def _ping(self, ip, port):
+        """
+        try to ping seed node
+        """
         self.ping((ip, port), None)
 
+    def _logerror(self, failure, hostname):
+        log.error("%s resolve error" % hostname)
+        return None
+
     def join(self, results):
-        # do ping
+        """
+        join the mdht network
+        """
         joined = False
 
         for (success, result) in results:
@@ -89,6 +101,15 @@ class MDHT(object):
                 joined = True
                 self.response_node = self.proto.routing_table.get_closest_nodes(self.node_id)
                 self.find_self()
+                return
+
+        # opps. we need to resolve again
+        if self.startup_retries < STARTUP_RETRIES:
+            log.error("startup: node %s doesn't startup successfully.Do try to startup again" % self.node_id)
+            self.startup_retries += 1
+            reactor.callLater(0, self._bootstrap)
+        else:
+            log.error("startup: give up to start node %s." % self.node_id)
 
     # join mdht network
     @defer.inlineCallbacks

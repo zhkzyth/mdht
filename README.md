@@ -6,12 +6,15 @@ A library with protocols needed to run a Mainline DHT node (written with Twisted
 I fork it from [mdht][1],and hack a lot to fit my need.so it may not be good to make pull requests.
 
 ### TODO
-- bt info
+- make node distributed properly
 - node monitor
-  - heartbeat/activity
-  - reconect
-- make wiki better look
-- structure pics
+  - heartbeat
+  - keep bucket activity
+- bt
+  - info save to db
+- wiki
+  - make a better look
+  - structure pics
 - test
 
 ### dev log

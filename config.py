@@ -24,6 +24,8 @@ REDIS_SETTING = {
 # nodes num for opening
 NODES_NUM = 50
 
+# how many times do we retry node startup action
+STARTUP_RETRIES = 5
 #
 HOOK_ITERATE = long("D20E34D7C69C296B7CB7447532DF6AA4D2BE001C", 16)
 
