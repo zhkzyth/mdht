@@ -22,7 +22,7 @@ class Source_Info(object):
         try:
             self._datastore.update({"_id":str(source_id)}, {"$addToSet":{"peer_list":peer}}, upsert=True)
         except (OperationFailure, DuplicateKeyError):
-            log.error("can not add peer to peer_list.")
+            log.err("can not add peer to peer_list.")
             return False
         return True
 

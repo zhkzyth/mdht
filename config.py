@@ -123,6 +123,16 @@ constants.search_width = 32
 ## search retries for iteration funcs like find_node or whatever
 constants.search_retries = 4
 
+## find_self retries
+constants.find_self_retries = 4
+
+## max node_id
+constants.max_node_id = long(2**160)
+## node_id range
+constants.piece = constants.max_node_id/NODES_NUM
+## step to find new node id
+constants.step = 4
+
 try:
     from local_settings import *
 except:

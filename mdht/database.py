@@ -30,7 +30,7 @@ class MongoDb(object):
         if drop_ok:
             result = self.db["routing_table"].insert(routing_table)
         else:
-            log.error("drop collection routing_table error.retry?")
+            log.err("drop collection routing_table error.retry?")
             result = None
         return result
 

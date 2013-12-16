@@ -22,11 +22,8 @@ def main():
     Logger.basicConfig(level=DEBUG)
     # Logger.basicConfig(level=DEBUG, filename=ROOT_PATH+"/log/mdht.log")
 
-    # distribute 500 nodes
-    max_node_id = long(2**160)
-    piece = max_node_id/NODES_NUM
     while  num<NODES_NUM:
-        node_id = random.randint(0,piece) + num*piece
+        node_id = random.randint(0,constants.piece) + num*constants.piece
         node_id_list.append(node_id)
         MDHT(node_id, bootstrap_addresses=constants.bootstrap_addresses, port=_port)
         num += 1

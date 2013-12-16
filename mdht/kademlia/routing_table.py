@@ -327,7 +327,7 @@ class TreeRoutingTable(object):
                 database["routing_table"].insert(params, continue_on_error=True)
                 log.msg("done! nodes has saved to routing_table.")
             except:
-                log.error("opps! save nodes to routing_table break.")
+                log.err("opps! save nodes to routing_table break.")
 
     @staticmethod
     def persist_routing_table():

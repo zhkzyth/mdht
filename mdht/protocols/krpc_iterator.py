@@ -143,7 +143,7 @@ class KRPC_Iterator(KRPC_Responder):
         # and set consumeErrors to True cause iterate_func timeout
         # error is ok.
         dl = defer.DeferredList(deferreds, consumeErrors=True)
-        # Make sure atleast one query succeeds
+        # Make sure at least one query succeeds
         # and collect the resulting nodes/peers
         dl.addCallback(self._check_query_success_callback)
         dl.addCallback(self._collect_nodes_and_peers_callback)
@@ -154,7 +154,9 @@ class KRPC_Iterator(KRPC_Responder):
         Get result nodes from find_node search,
         and we do some reconstruction to be with seed_node.
         """
-        result.nodes = (seed_node, result.nodes)
+        # TODO in case of getting a None
+        nodes = result.nodes or []
+        result.nodes = (seed_node, nodes)
         return result
 
     def _check_query_success_callback(self, results):
