@@ -22,7 +22,7 @@ REDIS_SETTING = {
 }
 
 # nodes num for opening
-NODES_NUM = 50
+NODES_NUM = 5
 
 # how many times do we retry node startup action
 STARTUP_RETRIES = 5
@@ -41,7 +41,7 @@ constants.k = 8
 constants.id_size = 160
 
 # Time after which an RPC will timeout and fail (seconds)
-constants.rpctimeout = 60
+constants.rpctimeout = 30
 
 # Time after which a high level query (as used in the SimpleNodeProtocol)
 # should timeout (seconds)

@@ -125,7 +125,7 @@ class KRPC_Iterator(KRPC_Responder):
         else:
             seed_nodes = nodes
 
-        log.msg("do one iteration to %s,\n the nodes is %s" % (target_id,seed_nodes))
+        log.msg("do one iteration to %s" % target_id)
         # Don't send duplicate queries
         seed_nodes = set(seed_nodes)
 
@@ -136,6 +136,7 @@ class KRPC_Iterator(KRPC_Responder):
             d = iterate_func(node.address, target_id, timeout)
             if iterate_func == self.find_node:
                 d.addCallback(self._reconsturct_data, node)
+                d.addErrback(self._logerror)
             deferreds.append(d)
 
         # Create a meta-object that fires when
@@ -158,6 +159,11 @@ class KRPC_Iterator(KRPC_Responder):
         nodes = result.nodes or []
         result.nodes = (seed_node, nodes)
         return result
+
+    def _logerror(self, failure):
+        ## BUG?
+        log.msg("find_node timeout")
+        return failure
 
     def _check_query_success_callback(self, results):
         """

@@ -293,7 +293,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
         """
         # Pull the node corresponding to this response out
         # of our routing table, or create it if it doesn't exist
-        log.msg("_query_success_callback, and result is %s" % response)
+        log.msg("_query_success_callback")
 
 
         # get/create node, and update the node's activeness for later calculation
@@ -336,6 +336,9 @@ class KRPC_Sender(protocol.DatagramProtocol):
 
         return failure
 
+    # FIXME is there a race condition here?
+    # every time there is several unhandled timeoutError.But
+    # we have choose to consume it,strange anyway..=.=
     def _remove_transaction_bothback(self, result, transaction):
         """
         Callback/errback that removes an outstanding transaction

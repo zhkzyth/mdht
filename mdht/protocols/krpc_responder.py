@@ -199,7 +199,7 @@ class KRPC_Responder(KRPC_Sender):
         token = self._token_generator.generate(query, address)
         # Attach the peers, nodes, and token to the response message
         response = query.build_response(nodes=nodes, peers=peers, token=token)
-        log.msg("get_peers_Received response:%s", response)
+        # log.msg("get_peers_Received response:%s", response)
         self.sendResponse(response, address)
 
     def announce_peer_Received(self, query, address):
