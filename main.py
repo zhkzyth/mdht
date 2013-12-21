@@ -14,7 +14,7 @@ sys.path.append(ROOT_PATH)
 
 
 def main():
-    #啟動500個節點監聽請求
+    #distribute num nodes to crawl infos
     num = 0
     node_id_list = []
     _port = constants.dht_port

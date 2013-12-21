@@ -6,8 +6,6 @@ A library with protocols needed to run a Mainline DHT node (written with Twisted
 I fork it from [mdht][1],and hack a lot to fit my need.so it may not be good to make pull requests.
 
 ### TODO
-- bt
-  - info save to db
 - node state monitor
   - kbucket heartbeat
   - how to find out if a node is in a dead nodes tree
