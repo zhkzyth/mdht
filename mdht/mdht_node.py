@@ -8,6 +8,7 @@ from twisted.internet import reactor, defer
 from twisted.python import log
 
 from mdht.protocols.krpc_iterator import IKRPC_Iterator, KRPC_Iterator, IterationError
+from mdht.protocols.errors import TimeoutError
 from config import constants, STARTUP_RETRIES
 
 
@@ -121,13 +122,6 @@ class MDHT(object):
         log.err("%s unable to be resolved." % hostname)
         return None
 
-    # TODO add this feature to avoid node cold down.
-    # tell_more_nodes(MyID) ->
-    #     %% strategy
-    # 	search:get_peers(MyID, dht_id:random()),
-    # 	timer:sleep(?QUERY_INTERVAL),
-    # 	tell_more_nodes(MyID). % tail recursive, be careful
-
     def join(self, results):
         """
         join the mdht network
@@ -142,12 +136,12 @@ class MDHT(object):
                 return
 
         # opps. we need to resolve again
-    if self.startup_retries < STARTUP_RETRIES:
-        log.err("startup: node %s doesn't startup successfully.Do try to startup again" % self.node_id)
-        self.startup_retries += 1
-        reactor.callLater(0, self._bootstrap)
-    else:
-        log.err("------------------- give up to start node %s ------------------------" % self.node_id)
+        if self.startup_retries < STARTUP_RETRIES:
+            log.err("startup: node %s doesn't startup successfully.Do try to startup again" % self.node_id)
+            self.startup_retries += 1
+            reactor.callLater(0, self._bootstrap)
+        else:
+            log.err("------------------- give up to start node %s ------------------------" % self.node_id)
 
     # join mdht network
     @defer.inlineCallbacks
@@ -171,11 +165,11 @@ class MDHT(object):
                 # update our response_node set to do a better match
                 self.response_node = self.proto.routing_table.get_closest_nodes(self.node_id)
                 reactor.callLater(0, self.find_self)
-            else:
-                # filter out nodes that has responsed
-                add_live = set()
-                for return_node in return_nodes:
-                    add_live.add(return_node[0])
+        else:
+            # filter out nodes that has responsed
+            add_live = set()
+            for return_node in return_nodes:
+                add_live.add(return_node[0])
 
             self.alive = self.alive.union(add_live)
 
@@ -186,8 +180,8 @@ class MDHT(object):
             temp_dict = []
             for return_node in return_nodes:
                 temp_dict.append(return_node[1])
-                all_nodes = list(itertools.chain(*temp_dict))
-                new_nodes = [node for node in all_nodes if node not in self.queried]
+            all_nodes = list(itertools.chain(*temp_dict))
+            new_nodes = [node for node in all_nodes if node not in self.queried]
 
             # the next queried nodes are the closest nodes in the responsed nodes replied
             # from node queried in this search iteration.
@@ -231,7 +225,7 @@ class MDHT(object):
         ##TODO think out a better algorithm
         log.err("------------------------ oops!drop this node.-----------------------")
         ## for now just raise an IterationError
-        # raise IterationError("just drop a node to avoid CPU waste")
+        #raise IterationError("just drop a node to avoid CPU waste")
 
     ##TODO may use this algorithm for a better node distribution
     def _regenrate_id(self):
@@ -247,7 +241,7 @@ class MDHT(object):
                 node_id[self.node_id_index] = 1
             else:
                 node_id[self.node_id_index] = 0
-                self.node_id = long("".join(node_id),2)
+            self.node_id = long("".join(node_id),2)
 
     def find_live_node_min(self, nodes):
         sorted_list = sorted(nodes, key=(lambda node: node.distance(self.node_id)))

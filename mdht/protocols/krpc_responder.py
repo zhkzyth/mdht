@@ -187,9 +187,9 @@ class KRPC_Responder(KRPC_Sender):
         log.msg("get_peers_Received from node(%s:%s)" % address)
 
         ## get_peers request times > announce_peers
-        node_ip, node_port = address
-        peer_address = (node_ip, query.port)
-        self._datastore.add(query.target_id, peer_address)
+        #node_ip, node_port = address
+        #peer_address = (node_ip, query.port)
+        #self._datastore.add(query.target_id, peer_address)
 
         nodes = None
         peers = self._datastore.get(query.target_id)
