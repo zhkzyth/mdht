@@ -186,11 +186,6 @@ class KRPC_Responder(KRPC_Sender):
     def get_peers_Received(self, query, address):
         log.msg("get_peers_Received from node(%s:%s)" % address)
 
-        ## get_peers request times > announce_peers
-        #node_ip, node_port = address
-        #peer_address = (node_ip, query.port)
-        #self._datastore.add(query.target_id, peer_address)
-
         nodes = None
         peers = self._datastore.get(query.target_id)
         # Check if we have peers for the target infohash
@@ -207,6 +202,12 @@ class KRPC_Responder(KRPC_Sender):
         # log.msg("get_peers_Received response:%s", response)
         self.sendResponse(response, address)
 
+        ## get_peers request times > announce_peers
+        node_ip, node_port = address
+        #BUG query.port not always exit?
+        peer_address = (node_ip, node_port)
+        self._datastore.add(query.target_id, peer_address)
+
     def announce_peer_Received(self, query, address):
         log.msg("announce_peers_Received from node(%s:%s)" % address)
         token = query.token
@@ -220,9 +221,9 @@ class KRPC_Responder(KRPC_Sender):
             # If the token is valid, we authenticate
             # the querying node to store itself as a peer
             # in our datastore
-            # node_ip, node_port = address
-            # peer_address = (node_ip, query.port)
-            # self._datastore.add(query.target_id, peer_address)
+            node_ip, node_port = address
+            peer_address = (node_ip, query.port)
+            self._datastore.add(query.target_id, peer_address)
 
             # announce_peer responses have no additional
             # data (and serve just as a confirmation)
