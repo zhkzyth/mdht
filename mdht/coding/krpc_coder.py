@@ -85,19 +85,19 @@ def _decode(packet):
     # Decode the message into one of Query/Response/Error (as found
     # in message_types)
     msgtype = rpc_dict["y"]
-    message_decoders = {'q': _query_decoder, 
+    message_decoders = {'q': _query_decoder,
                         'r': _response_decoder,
                         'e': _error_decoder}
     rpc = message_decoders[msgtype](rpc_dict)
 
     # Attach the transaction id
     rpc._transaction_id = basic_coder.btol(rpc_dict['t'])
-    return rpc 
+    return rpc
 
 def _query_decoder(rpc_dict):
     """
     Decode the given KRPC dictionary into a valid Query
-    
+
     @see decode
     @return krpc_types.Query
 
@@ -153,7 +153,7 @@ def _decode_addresses(address_string):
     for address_string in encoded_addresses:
         decoded_peer = basic_coder.decode_address(address_string)
         addresses.append(decoded_peer)
-    return addresses 
+    return addresses
 
 def _decode_nodes(node_string):
     """Decode a concatenated node string into a list of nodes"""
