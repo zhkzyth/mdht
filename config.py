@@ -22,7 +22,7 @@ REDIS_SETTING = {
 }
 
 # nodes num for opening
-NODES_NUM = 5
+NODES_NUM = 100
 
 # how many times do we retry node startup action
 STARTUP_RETRIES = 5
@@ -65,7 +65,7 @@ constants.NICEinterval = 6
 
 # This interval determines how often the DHT's state data will be
 # saved into a file on disk (seconds)
-constants.DUMPinterval = 3 * 60 # 3 minutes
+constants.DUMPinterval = 12 * 60 * 60 # 3 minutes
 
 # Size of the token (bits)
 constants.tokensize = 32

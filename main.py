@@ -19,8 +19,8 @@ def main():
     node_id_list = []
     _port = constants.dht_port
 
-    #Logger.basicConfig(level=DEBUG)
-    Logger.basicConfig(level=DEBUG, filename=ROOT_PATH+"/log/mdht.log")
+    Logger.basicConfig(level=DEBUG)
+    #Logger.basicConfig(level=DEBUG, filename=ROOT_PATH+"/log/mdht.log")
 
     while  num<NODES_NUM:
         node_id = random.randint(0,constants.piece) + num*constants.piece
