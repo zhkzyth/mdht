@@ -284,7 +284,7 @@ class TreeRoutingTable(object):
             # set a routine to keep routing table updated
             # little data lossing is ok here
             save_routing_table_loop = task.LoopingCall(TreeRoutingTable.routine_save_routing_table)
-            save_routing_table_loop.start(constants.DUMPinterval)
+            save_routing_table_loop.start(constants.DUMPinterval, now=False)
 
         return TreeRoutingTable._instance
 
