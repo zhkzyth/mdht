@@ -2,7 +2,8 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
-import inspect, os
+import inspect
+import os
 
 #LOGIC constants
 ROOT_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -28,6 +29,7 @@ NODES_NUM = 5
 STARTUP_RETRIES = 5
 #
 HOOK_ITERATE = long("D20E34D7C69C296B7CB7447532DF6AA4D2BE001C", 16)
+
 
 # constants used by mdht lib
 class constants(object):
@@ -65,7 +67,7 @@ constants.NICEinterval = 6
 
 # This interval determines how often the DHT's state data will be
 # saved into a file on disk (seconds)
-constants.DUMPinterval = 3 * 60 # 3 minutes
+constants.DUMPinterval = 3 * 60  # 3 minutes
 
 # Size of the token (bits)
 constants.tokensize = 32
@@ -88,8 +90,8 @@ constants.failcount_threshold = 3
 
 # Bootstrap node
 constants.bootstrap_addresses = [("67.18.187.143", 1337),
-                       ("dht.transmissionbt.com", 6881),
-                       ("router.utorrent.com", 6881)]
+                                 ("dht.transmissionbt.com", 6881),
+                                 ("router.utorrent.com", 6881)]
 
 # bootstrap_addresses = [("dht.transmissionbt.com", 6881)]
 

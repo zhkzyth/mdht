@@ -219,7 +219,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
             else:
                 log.msg("Received a reply not corresponding to an" +
                         " outstanding query from: %s, reply: %s" % (
-                        contact.address_str(address), str(krpc)))
+                            contact.address_str(address), str(krpc)))
 
     def queryReceived(self, query, address):
         method_name = "%s_Received" % query.rpctype
@@ -237,7 +237,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
 
     def sendKRPC(self, krpc, address):
         encoded_packet = krpc_coder.encode(krpc)
-        log.msg("sendKRPC",encoded_packet,address,"\n")
+        log.msg("sendKRPC", encoded_packet, address, "\n")
         self.transport.write(encoded_packet, address)
 
     def sendQuery(self, query, address, timeout):
@@ -264,7 +264,7 @@ class KRPC_Sender(protocol.DatagramProtocol):
         # Set up a timeout during which this transaction has to complete
         # (ie: receive a response or error)
         t.timeout_call = self._reactor.callLater(constants.rpctimeout,
-                                t.deferred.errback, TimeoutError())
+                                                 t.deferred.errback, TimeoutError())
         # Store this transaction, so when we receive responses back,
         # we can check whether their rightness
         self._transactions[query._transaction_id] = t
@@ -294,7 +294,6 @@ class KRPC_Sender(protocol.DatagramProtocol):
         # Pull the node corresponding to this response out
         # of our routing table, or create it if it doesn't exist
         log.msg("_query_success_callback")
-
 
         # get/create node, and update the node's activeness for later calculation
         rt_node = self.routing_table.get_node(response._from)
@@ -368,7 +367,6 @@ class KRPC_Sender(protocol.DatagramProtocol):
             transaction_id = random.getrandbits(constants.transaction_id_size)
             if transaction_id not in self._transactions:
                 return transaction_id
-
 
     def _save_received_node(self, krpc, address):
         """

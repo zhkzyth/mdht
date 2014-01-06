@@ -120,11 +120,12 @@ class Logger(object):
         of DEBUG, WARNING, ERROR (or any of the levels from the logging
         module). If not set, DEBUG log level is used as minimum.
         """
-        logging.basicConfig(level=level,
-                            format='%(asctime)s %(levelname)s %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S',
-                            filename=filename,
-                            filemode=filemode,
+        logging.basicConfig(
+            level=level,
+            format='%(asctime)s %(levelname)s %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            filename=filename,
+            filemode=filemode,
         )
 
 observer = log.PythonLoggingObserver()

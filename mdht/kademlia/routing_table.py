@@ -73,6 +73,7 @@ class IRoutingTable(Interface):
 
         """
 
+
 class TreeRoutingTable(object):
     """
     Prefix tree based Kademlia routing table
@@ -138,7 +139,7 @@ class TreeRoutingTable(object):
         closest_nodes = []
         self._get_closest_nodes(node_id, self.root, closest_nodes, num_nodes)
 
-        closest_nodes.sort(key = lambda node: node.distance(node_id))
+        closest_nodes.sort(key=lambda node: node.distance(node_id))
         return closest_nodes[:num_nodes]
 
     def get_kbuckets(self):
@@ -181,8 +182,7 @@ class TreeRoutingTable(object):
             # If the kbucket rejected the node, it is probably
             # full. Check to see if we can split the kbucket
             # and insert the node into one of its children
-            if (tnode.kbucket.full() and
-                tnode.kbucket.splittable()):
+            if (tnode.kbucket.full() and tnode.kbucket.splittable()):
                 self._split(tnode)
                 node_accepted = self._offer_node(tnode, node)
                 return node_accepted
@@ -224,11 +224,11 @@ class TreeRoutingTable(object):
         if tnode.lchild.kbucket.key_in_range(node_id):
             direction = "left"
             self._get_closest_nodes(
-                    node_id, tnode.lchild, closest_nodes, num_nodes)
+                node_id, tnode.lchild, closest_nodes, num_nodes)
         elif tnode.rchild.kbucket.key_in_range(node_id):
             direction = "right"
             self._get_closest_nodes(
-                    node_id, tnode.rchild, closest_nodes, num_nodes)
+                node_id, tnode.rchild, closest_nodes, num_nodes)
         else:
             log.msg("RoutingTable: node_id didn't fall into either"
                     " of a treenode's children.")
@@ -238,10 +238,10 @@ class TreeRoutingTable(object):
         # enough nodes, try going down the other subtree
         if direction == "left":
             self._get_closest_nodes(
-                    node_id, tnode.rchild, closest_nodes, num_nodes)
+                node_id, tnode.rchild, closest_nodes, num_nodes)
         elif direction == "right":
             self._get_closest_nodes(
-                    node_id, tnode.lchild, closest_nodes, num_nodes)
+                node_id, tnode.lchild, closest_nodes, num_nodes)
         return
 
     def _split(self, tnode):
@@ -261,8 +261,7 @@ class TreeRoutingTable(object):
             was succesful
 
         """
-        if (not tnode.is_leaf() or
-            not tnode.kbucket.splittable()):
+        if (not tnode.is_leaf() or not tnode.kbucket.splittable()):
             return False
 
         (lbucket, rbucket) = tnode.kbucket.split()
@@ -346,6 +345,7 @@ class TreeRoutingTable(object):
         """
         log.msg("routing: save routing_table to db")
         TreeRoutingTable._save_routing_table()
+
 
 class _TreeNode(object):
     """

@@ -95,6 +95,7 @@ class IKRPC_Iterator(IKRPC_Responder):
 
         """
 
+
 class KRPC_Iterator(KRPC_Responder):
 
     implements(IKRPC_Iterator)
@@ -121,7 +122,7 @@ class KRPC_Iterator(KRPC_Responder):
             if len(seed_nodes) == 0:
                 return defer.fail(
                     IterationError("No nodes were supplied and no nodes "
-                        + "were found in the routing table"))
+                                   + "were found in the routing table"))
         else:
             seed_nodes = nodes
 

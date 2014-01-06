@@ -12,6 +12,7 @@ from mdht.coding import basic_coder
 from mdht.coding.bencode import bdecode, bencode, BTFailure
 from mdht.krpc_types import Query, Response, Error
 
+
 class InvalidKRPCError(Exception):
     """
     Catch-all abstraction error for the encoding/decoding process
@@ -26,6 +27,7 @@ class InvalidKRPCError(Exception):
     """
     def __init__(self, invalid_message):
         self.invalid_message = invalid_message
+
 
 def decode(packet):
     """
@@ -43,6 +45,7 @@ def decode(packet):
         raise InvalidKRPCError(packet)
     else:
         return dpacket
+
 
 def encode(message):
     """
@@ -65,6 +68,7 @@ def encode(message):
 ## Private encoding / decoding helper functions
 ##
 
+
 class _ProtocolFormatError(Exception):
     """
     Error signifiying invalid krpc options were included in the message
@@ -76,6 +80,7 @@ class _ProtocolFormatError(Exception):
 
     """
     pass
+
 
 def _decode(packet):
     """@see decode"""
@@ -93,6 +98,7 @@ def _decode(packet):
     # Attach the transaction id
     rpc._transaction_id = basic_coder.btol(rpc_dict['t'])
     return rpc
+
 
 def _query_decoder(rpc_dict):
     """
@@ -122,6 +128,7 @@ def _query_decoder(rpc_dict):
         raise _ProtocolFormatError()
     return q
 
+
 def _response_decoder(rpc_dict):
     """
     Decode the given KRPC dictionary into a valid Response
@@ -145,6 +152,7 @@ def _response_decoder(rpc_dict):
         r.token = basic_coder.btol(rpc_dict['r']['token'])
     return r
 
+
 def _decode_addresses(address_string):
     """Decode a concatenated address string into a list of addres tuples"""
     addresses = []
@@ -154,6 +162,7 @@ def _decode_addresses(address_string):
         decoded_peer = basic_coder.decode_address(address_string)
         addresses.append(decoded_peer)
     return addresses
+
 
 def _decode_nodes(node_string):
     """Decode a concatenated node string into a list of nodes"""
@@ -165,10 +174,12 @@ def _decode_nodes(node_string):
         nodes.append(decoded_node)
     return nodes
 
+
 def _chunkify(string, n):
     """Split the string into n sized chunks"""
     for i in xrange(0, len(string), n):
         yield string[i:i+n]
+
 
 def _error_decoder(rpc_dict):
     """
@@ -184,12 +195,13 @@ def _error_decoder(rpc_dict):
         raise _ProtocolFormatError()
     return e
 
+
 def _encode(message):
     """@see encode"""
     intermediate_msg = {}
     # Encode and attach the transaction id
     intermediate_msg['t'] = (
-            basic_coder.ltob(message._transaction_id))
+        basic_coder.ltob(message._transaction_id))
 
     # Determine the type of this KRPC
     if isinstance(message, Query):
@@ -203,7 +215,7 @@ def _encode(message):
 
     message_encoders = {'q': _query_encoder,
                         'r': _response_encoder,
-                        'e': _error_encoder};
+                        'e': _error_encoder}
     # Add the additional Query/Response/Error
     # data onto the message
     addition = message_encoders[intermediate_msg['y']](message)
@@ -212,29 +224,31 @@ def _encode(message):
     encoded_msg = bencode(intermediate_msg)
     return encoded_msg
 
+
 def _query_encoder(query):
     """@see encode"""
     query_dict = {"q": query.rpctype,
-                  "a": { "id": basic_coder.encode_network_id(query._from)}}
+                  "a": {"id": basic_coder.encode_network_id(query._from)}}
     # Perform specific rpc encoding
     if query.rpctype == 'ping':
         pass
     elif query.rpctype == 'find_node':
         query_dict['a']['target'] = (
-                basic_coder.encode_network_id(query.target_id))
+            basic_coder.encode_network_id(query.target_id))
     elif query.rpctype == 'get_peers':
         query_dict['a']['info_hash'] = (
-                basic_coder.encode_network_id(query.target_id))
+            basic_coder.encode_network_id(query.target_id))
     elif query.rpctype == 'announce_peer':
         query_dict['a']['token'] = basic_coder.ltob(query.token)
         # Try encoding the port, to see if it is within range
         basic_coder.encode_port(query.port)
         query_dict['a']['port'] = query.port
         query_dict['a']['info_hash'] = (
-                basic_coder.encode_network_id(query.target_id))
+            basic_coder.encode_network_id(query.target_id))
     else:
         raise _ProtocolFormatError()
     return query_dict
+
 
 def _response_encoder(response):
     """@see encode"""
@@ -244,11 +258,12 @@ def _response_encoder(response):
         resp_dict['r']['nodes'] = "".join(encoded_nodes)
     if response.peers is not None:
         encoded_peers = [basic_coder.encode_address(peer)
-                            for peer in response.peers]
+                         for peer in response.peers]
         resp_dict['r']['values'] = "".join(encoded_peers)
     if response.token is not None:
         resp_dict['r']['token'] = basic_coder.ltob(response.token)
     return resp_dict
+
 
 def _error_encoder(error):
     """@see encode"""

@@ -36,12 +36,14 @@ def btol(network_order_byte_string):
     """Convert the bencoded int into a python long"""
     return long(str(network_order_byte_string).encode("hex"), 16)
 
+
 def ltob(long_number):
     """Convert a python long into a bencoded int"""
     numstring = hex(long_number)[2:].rstrip("L")
     if len(numstring) % 2 == 1:
-        numstring = "0%s" % numstring ## keep on adding padding zero
+        numstring = "0%s" % numstring  # keep on adding padding zero
     return numstring.decode("hex")
+
 
 def encode_network_id(network_id):
     """
@@ -52,10 +54,11 @@ def encode_network_id(network_id):
     """
     if network_id < 0 or network_id >= 2**constants.id_size:
         raise InvalidDataError(
-                "The network ID's value falls out of the valid range",
-                network_id)
+            "The network ID's value falls out of the valid range",
+            network_id)
     encoded_network_id = ltob(network_id)
     return _pad_zeros(encoded_network_id, 20)
+
 
 def decode_network_id(network_id_string):
     """
@@ -66,10 +69,11 @@ def decode_network_id(network_id_string):
     """
     if len(network_id_string) != 20:
         raise InvalidDataError(
-                "The network id string has an improper length",
-                network_id_string)
+            "The network id string has an improper length",
+            network_id_string)
     decoded_network_id = btol(network_id_string)
     return decoded_network_id
+
 
 def decode_port(port_string):
     """
@@ -80,9 +84,10 @@ def decode_port(port_string):
     """
     if len(port_string) != 2:
         raise InvalidDataError(
-                "The port string is too short or too long",
-                port_string)
+            "The port string is too short or too long",
+            port_string)
     return btol(port_string)
+
 
 def encode_port(port):
     """
@@ -98,10 +103,11 @@ def encode_port(port):
     # A port is 2 bytes, so 2**16 - 1 is the max value
     if port < 0 or port >= 2**16:
         raise InvalidDataError(
-                "The port number is invalid",
-                port)
+            "The port number is invalid",
+            port)
     encoded_port = ltob(port)
     return _pad_zeros(encoded_port, 2)
+
 
 def encode_address(address):
     """
@@ -112,7 +118,7 @@ def encode_address(address):
     """
     try:
         (ip, port) = address
-        ip_string = socket.inet_aton(ip) ## change ip string to 32 bit string (4 bytes at all)
+        ip_string = socket.inet_aton(ip)  # change ip string to 32 bit string (4 bytes at all)
         # Make sure that a port's value is padded to two bytes
         # in the encoding, since each address string must
         # take up six bytes for the encoding/decoding to work
@@ -120,8 +126,9 @@ def encode_address(address):
         return "%s%s" % (ip_string, port_string)
     except (socket.error, ValueError):
         raise InvalidDataError(
-                "The address had an invalid format",
-                address)
+            "The address had an invalid format",
+            address)
+
 
 def decode_address(address_string):
     """
@@ -133,18 +140,19 @@ def decode_address(address_string):
     try:
         if len(address_string) != 6:
             raise InvalidDataError(
-                    "The address string has an invalid length",
-                    address_string)
+                "The address string has an invalid length",
+                address_string)
         ip = socket.inet_ntoa(address_string[:4])
         port = decode_port(address_string[4:])
         return (ip, port)
     except (socket.error, TypeError):
         raise InvalidDataError(
-                "The address string has an invalid format",
-                address_string)
+            "The address string has an invalid format",
+            address_string)
 #
 # Private
 #
+
 
 def _pad_zeros(string, size):
     """

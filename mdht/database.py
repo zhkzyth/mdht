@@ -26,7 +26,7 @@ class MongoDb(object):
                          'port':2031
                          },{...},...]
         """
-        drop_ok  = self.db["routing_table"].drop(safe=True)
+        drop_ok = self.db["routing_table"].drop(safe=True)
         if drop_ok:
             result = self.db["routing_table"].insert(routing_table)
         else:

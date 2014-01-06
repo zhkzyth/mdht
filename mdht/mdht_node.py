@@ -36,8 +36,7 @@ class MDHT(object):
 
     def __init__(self, node_id,
                  port=constants.dht_port, bootstrap_addresses=None,
-                 db=None
-    ):
+                 db=None):
         """
         Prepares the MDHT client
 
@@ -84,8 +83,8 @@ class MDHT(object):
 
     def _proxy_funcs(self):
         funcnames = filter(lambda name:
-                        not (name.startswith("_") or name.endswith("Received")),
-                    IKRPC_Iterator)
+                           not (name.startswith("_") or name.endswith("Received")),
+                           IKRPC_Iterator)
 
         for funcname in funcnames:
             log.msg(funcname)
@@ -185,7 +184,7 @@ class MDHT(object):
 
             # the next queried nodes are the closest nodes in the responsed nodes replied
             # from node queried in this search iteration.
-            new_next = [ node for node in self.get_closest_nodes(self.node_id, new_nodes, search_width=constants.search_width)]
+            new_next = [node for node in self.get_closest_nodes(self.node_id, new_nodes, search_width=constants.search_width)]
 
             # TODO how we calculate the min for our nodes????
             # Check if the closest node in the work queue is closer
@@ -194,7 +193,7 @@ class MDHT(object):
             if len(self.alive) == 0:
                 min_alive_dist = float("+inf")
             else:
-                min_alive_dist =  self.find_live_node_min(add_live)
+                min_alive_dist = self.find_live_node_min(add_live)
 
             if len(new_next) == 0:
                 min_queue_dist = float("+inf")
@@ -207,7 +206,7 @@ class MDHT(object):
 
             # Check if the closest node in the work queue is closer
             # to the infohash than the closest responsive node.
-            if  min_queue_dist < min_alive_dist:
+            if min_queue_dist < min_alive_dist:
                 self.retries = 0
             else:
                 self.retries += 1
@@ -241,7 +240,7 @@ class MDHT(object):
                 node_id[self.node_id_index] = 1
             else:
                 node_id[self.node_id_index] = 0
-            self.node_id = long("".join(node_id),2)
+            self.node_id = long("".join(node_id), 2)
 
     def find_live_node_min(self, nodes):
         sorted_list = sorted(nodes, key=(lambda node: node.distance(self.node_id)))

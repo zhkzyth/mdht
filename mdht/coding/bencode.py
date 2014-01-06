@@ -23,6 +23,7 @@ class BTFailure(Exception):
     pass
 ##
 
+
 def decode_int(x, f):
     f += 1
     newf = x.index('e', f)
@@ -34,6 +35,7 @@ def decode_int(x, f):
         raise ValueError
     return (n, newf+1)
 
+
 def decode_string(x, f):
     colon = x.index(':', f)
     n = int(x[f:colon])
@@ -42,12 +44,14 @@ def decode_string(x, f):
     colon += 1
     return (x[colon:colon+n], colon+n)
 
+
 def decode_list(x, f):
     r, f = [], f+1
     while x[f] != 'e':
         v, f = decode_func[x[f]](x, f)
         r.append(v)
     return (r, f + 1)
+
 
 def decode_dict(x, f):
     r, f = {}, f+1
@@ -71,6 +75,7 @@ decode_func['7'] = decode_string
 decode_func['8'] = decode_string
 decode_func['9'] = decode_string
 
+
 def bdecode(x):
     try:
         r, l = decode_func[x[0]](x, 0)
@@ -90,20 +95,24 @@ class Bencached(object):
     def __init__(self, s):
         self.bencoded = s
 
-def encode_bencached(x,r):
-    r.append(x.bencoded)
+    def encode_bencached(x, r):
+        r.append(x.bencoded)
+
 
 def encode_int(x, r):
     r.extend(('i', str(x), 'e'))
+
 
 def encode_bool(x, r):
     if x:
         encode_int(1, r)
     else:
         encode_int(0, r)
-        
+
+
 def encode_string(x, r):
     r.extend((str(len(x)), ':', x))
+
 
 def encode_list(x, r):
     r.append('l')
@@ -111,7 +120,8 @@ def encode_list(x, r):
         encode_func[type(i)](i, r)
     r.append('e')
 
-def encode_dict(x,r):
+
+def encode_dict(x, r):
     r.append('d')
     ilist = x.items()
     ilist.sort()
@@ -134,6 +144,7 @@ try:
     encode_func[BooleanType] = encode_bool
 except ImportError:
     pass
+
 
 def bencode(x):
     r = []

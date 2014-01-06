@@ -47,7 +47,7 @@ class Node(object):
         self.node_id = node_id
         self.address = address
         # Statistical information
-        if last_updated == None:
+        if last_updated is None:
             self.last_updated = time.time()
             self.totalrtt = 0
             self.successcount = 0
@@ -150,7 +150,6 @@ class Node(object):
             return sys.maxint
         return self.totalrtt / total_reply_count
 
-
     def _touch(self, origin_time):
         current_time = time.time()
         self.last_updated = current_time
@@ -167,8 +166,8 @@ class Node(object):
 
     def __repr__(self):
         return "%s last_updated=%d successcount=%d failcount=%d" % (
-                self.__str__(), self.last_updated, self.successcount,
-                self.failcount)
+            self.__str__(), self.last_updated, self.successcount,
+            self.failcount)
 
     def __str__(self):
         return "node: id=%d address=%s" % (self.node_id,
@@ -179,6 +178,7 @@ class Node(object):
 def address_str(address):
     """Creates a string representation of an ipv4 address tuple (ip, port)"""
     return "ip=%s port=%d" % address
+
 
 def encode_node(node):
     """
@@ -192,6 +192,7 @@ def encode_node(node):
     """
     return "%s%s" % (basic_coder.encode_network_id(node.node_id),
                      basic_coder.encode_address(node.address))
+
 
 def decode_node(node_string):
     """

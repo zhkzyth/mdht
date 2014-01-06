@@ -5,13 +5,14 @@ from twisted.python import log
 
 from mdht.database import database
 
+
 class Source_Info(object):
 
     def __init__(self):
-        self._datastore  = database["sources"]
+        self._datastore = database["sources"]
 
     def get(self, source_id):
-        result = self._datastore.find_one({"_id":str(source_id)})
+        result = self._datastore.find_one({"_id": str(source_id)})
         if result:
             peer_list = result["peer_list"]
         else:
@@ -20,7 +21,7 @@ class Source_Info(object):
 
     def add(self, source_id=None, peer=None):
         try:
-            self._datastore.update({"_id":str(source_id)}, {"$addToSet":{"peer_list":peer}}, upsert=True)
+            self._datastore.update({"_id": str(source_id)}, {"$addToSet": {"peer_list": peer}}, upsert=True)
         except (OperationFailure, DuplicateKeyError):
             log.err("can not add peer to peer_list.")
             return False

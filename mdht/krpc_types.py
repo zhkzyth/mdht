@@ -45,11 +45,12 @@ class _KRPC(object):
     def __eq__(self, other):
         attributes = self._get_attrs()
         return all(hasattr(other, attribute) and
-                getattr(other, attribute) == getattr(self, attribute)
-                for attribute in attributes)
+                   getattr(other, attribute) == getattr(self, attribute)
+                   for attribute in attributes)
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
 
 class Query(_KRPC):
     """
@@ -65,7 +66,7 @@ class Query(_KRPC):
 
     """
     def __init__(self, _transaction_id=None, rpctype=None,
-            _from=None, target_id=None, token=None, port=None):
+                 _from=None, target_id=None, token=None, port=None):
         _KRPC.__init__(self, _transaction_id=None)
         self.rpctype = rpctype
         self._from = _from
@@ -127,7 +128,7 @@ class Response(_KRPC):
 
     """
     def __init__(self, _transaction_id=None, _from=None,
-            nodes=None, token=None, peers=None, rpctype=None):
+                 nodes=None, token=None, peers=None, rpctype=None):
         _KRPC.__init__(self, _transaction_id=_transaction_id)
         self._from = _from
         self.nodes = nodes
@@ -142,7 +143,8 @@ class Response(_KRPC):
     # TODO see if we can replace these with a function (in Query too)
     def _get_attrs(self):
         return ('_transaction_id', '_from',
-                    'nodes', 'token', 'peers', 'rpctype')
+                'nodes', 'token', 'peers', 'rpctype')
+
 
 class Error(_KRPC):
     """
@@ -161,9 +163,9 @@ class Error(_KRPC):
         printable_attributes = ['_transaction_id', 'rpctype', 'code']
         message_string = "message='%s'" % self.message
         return "<Error: %s %s>" % (
-                    self._build_repr(printable_attributes),
-                message_string
-                )
+            self._build_repr(printable_attributes),
+            message_string
+        )
 
     def _get_attrs(self):
         return ('_transaction_id', 'code', 'message')

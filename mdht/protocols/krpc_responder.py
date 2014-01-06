@@ -138,6 +138,7 @@ class IKRPC_Responder(IKRPC_Sender):
 
         """
 
+
 class KRPC_Responder(KRPC_Sender):
 
     implements(IKRPC_Responder)
@@ -266,6 +267,7 @@ class KRPC_Responder(KRPC_Sender):
         query.port = port
         return self.sendQuery(query, address, timeout)
 
+
 class _TokenGenerator(object):
     """
     Generate unique tokens in response to get_peers requests
@@ -296,8 +298,7 @@ class _TokenGenerator(object):
         # Remove timed out secrets
         self._prune_secrets()
         time_since_last_secret = time.time() - self.last_secret_time
-        if (time_since_last_secret >= constants._secret_timeout or
-            len(self.secrets) == 0):
+        if (time_since_last_secret >= constants._secret_timeout or len(self.secrets) == 0):
             self.secrets.appendleft(self._new_secret())
 
         self.last_secret_time = time.time()

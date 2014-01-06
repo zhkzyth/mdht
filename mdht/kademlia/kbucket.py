@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """
 @author Greg Skoczek
 
@@ -9,6 +11,7 @@ kademlia reference paper and the BitTorrent DHT BEP
 from twisted.python import log
 
 from config import constants
+
 
 class KBucketError(Exception):
     """
@@ -25,9 +28,10 @@ class KBucketError(Exception):
         self.func = func
         self.msg = msg
         self.value = value
+
     def __str__(self):
         return "KBucketError: Error '%s' in function '%s'" % (
-                self.func, self.msg)
+            self.func, self.msg)
 
 
 class KBucket(object):
@@ -47,9 +51,9 @@ class KBucket(object):
         self._nodes = set()
         if range_min >= range_max:
             raise KBucketError("__init__",
-                              "range_min is greater than or" +
-                              "equal to range_max",
-                              (range_min, range_max, maxsize))
+                               "range_min is greater than or" +
+                               "equal to range_max",
+                               (range_min, range_max, maxsize))
         self.range_min = range_min
         self.range_max = range_max
         self.maxsize = maxsize
@@ -117,7 +121,7 @@ class KBucket(object):
         """
         if not self.splittable():
             raise KBucketError("split",
-                    "This KBucket is not wide enough to split", ())
+                               "This KBucket is not wide enough to split", ())
 
         # Make two new KBuckets of equal size,
         # each covering half the range of the current KBucket
@@ -178,7 +182,7 @@ class KBucket(object):
         """
         if self.empty():
             return None
-        return min(self._nodes, key = lambda node: node.last_updated)
+        return min(self._nodes, key=lambda node: node.last_updated)
 
     def empty(self):
         """Tells whether this kbucket is empty"""

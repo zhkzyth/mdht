@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#encoding: utf-8
 """
 @author Greg Skoczek
 
@@ -6,6 +8,7 @@ associated with a transaction in the DHT network
 
 """
 import time
+
 
 class Transaction(object):
     """
@@ -34,10 +37,8 @@ class Transaction(object):
         return self.__hash__() ^ other.__hash__()
 
     def __hash__(self):
-        return long(
-                round(
-                    float("%d%f" % (self.query.transaction_id, self.time))))
+        return long(round(float("%d%f" % (self.query.transaction_id, self.time))))
 
     def __str__(self):
         return "transaction: id=%d, time=%d" % (
-                self.query.transaction_id, self.time)
+            self.query.transaction_id, self.time)
